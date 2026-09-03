@@ -1,0 +1,20 @@
+[package]
+name = "noob-electrical-components"
+description = "Physical models of the electrical components audio hardware is built from, each its own crate, re-exported here behind a feature so a plug-in takes one dependency and compiles in only what it uses"
+readme = "README.md"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+publish = false
+
+[features]
+default = []
+# The photoconductive cell and its electroluminescent panel: the T4-family
+# light-dependent resistor an optical compressor is built around.
+photocell = ["dep:noob-electrical-components-photocell"]
+
+[dependencies]
+noob-electrical-components-photocell = { workspace = true, optional = true }

@@ -1,0 +1,14 @@
+[package]
+name = "noob-electrical-components-photocell"
+description = "A physical model of the photoconductive cell and electroluminescent panel at the heart of an optical compressor: the T4-family light-dependent resistor, with its traps and its programme dependence"
+readme = "README.md"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+# Nothing here goes to crates.io until I say so.
+publish = false
+
+[dependencies]

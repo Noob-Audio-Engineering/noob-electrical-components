@@ -1,0 +1,36 @@
+//! Physical models of the electrical components audio hardware is built
+//! from, gathered behind one dependency.
+//!
+//! Each component is its own crate, so it can be read, tested and
+//! documented as the single thing it is. This crate re-exports them behind
+//! a feature each, so a plug-in writes one dependency line and turns on
+//! what it actually uses; a compressor that needs a photocell does not
+//! compile a transformer it will never call.
+//!
+//! ```toml
+//! [dependencies]
+//! noob-electrical-components = { git = "...", features = ["photocell"] }
+//! ```
+//!
+//! # What belongs here
+//!
+//! A component earns a place once something real shares it, or is about to.
+//! The point is not to atomise a codebase into parts that each have one
+//! caller: an abstraction pulled out of a single user is usually the wrong
+//! shape for the second one. The photocell qualified because two
+//! compressors already shared it and a third established where its edge
+//! lies by deliberately not using it.
+//!
+//! What does not belong here is circuitry. A component is the part; the
+//! resistor network around it, the sidechain that drives it and the
+//! make-up gain after it are the machine, and they differ from unit to
+//! unit while the part does not. Nor does general signal processing:
+//! filters, oversamplers and anti-aliasing are infrastructure rather than
+//! components, and they live elsewhere.
+
+#![forbid(unsafe_code)]
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
+#[cfg(feature = "photocell")]
+#[cfg_attr(docsrs, doc(cfg(feature = "photocell")))]
+pub use noob_electrical_components_photocell as photocell;
