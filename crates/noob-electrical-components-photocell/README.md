@@ -1,8 +1,14 @@
 # noob-electrical-components-photocell
 
-The light-dependent resistor at the heart of an optical compressor: an
-electroluminescent panel glued to a cadmium-sulphide photoresistor, as the
-T4 modules of the LA-2A and LA-3A use.
+The photoconductive element at the heart of an optical compressor, and the
+T4-family cell built around it.
+
+Two things live here and the difference matters. The resistance laws and
+the distortion term are properties of any photoresistor: the Tube-Tech
+CL-1B, whose potted element is emphatically not a T4 and which refuses this
+crate's timing entirely, still obeys them. `Cell` and its time constants
+are the T4 specifically, an electroluminescent panel glued to a
+cadmium-sulphide photoresistor, as the LA-2A and LA-3A use.
 
 Its behaviour is not a set of time constants somebody chose. The panel's
 light follows the Alfrey-Taylor law, the photoresistor's conductance

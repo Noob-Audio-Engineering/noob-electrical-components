@@ -396,3 +396,68 @@ fn retuning_keeps_the_panel_filter_correct() {
         slow.u
     );
 }
+
+/// The photoconductor's distortion grows with how hard the cell works, is
+/// odd-order, and vanishes when the cell is dark.
+///
+/// *Figure asserted:* the **shape and the scaling**, which is what the
+/// physics gives: "a photoresistor distorts in proportion to the voltage
+/// across it, which is why it is scaled by the reduction". No depth is
+/// asserted here, because `k` and `v0` belong to the caller: the three
+/// optical compressors that use this anchor them to their own published
+/// distortion figures and they differ by a factor of six.
+#[test]
+fn the_photoconductor_distorts_in_proportion_to_its_work() {
+    const K: f32 = 0.6;
+    const V0: f32 = 0.25;
+
+    // A dark cell passes the signal untouched, whatever the amplitude.
+    for v in [0.0f32, 0.1, 0.5, 1.0, -0.7] {
+        assert_eq!(
+            distortion(v, 1.0, K, V0),
+            v,
+            "a cell doing no work still distorted at v = {v}"
+        );
+    }
+
+    // Deeper reduction distorts more.
+    let light = (1.0 - distortion(0.5, 0.9, K, V0) / 0.5).abs();
+    let hard = (1.0 - distortion(0.5, 0.2, K, V0) / 0.5).abs();
+    assert!(
+        hard > light,
+        "a harder-working cell should distort more: {hard:.5} against {light:.5}"
+    );
+
+    // Odd order: the law is a function of the square, so it acts on the
+    // magnitude and keeps the sign, which is what makes it odd-order.
+    for v in [0.05f32, 0.2, 0.6, 1.0] {
+        let pos = distortion(v, 0.4, K, V0);
+        let neg = distortion(-v, 0.4, K, V0);
+        assert!(
+            (pos + neg).abs() < 1e-6,
+            "the term is not odd at v = {v}: {pos} against {neg}"
+        );
+        assert!(
+            pos.abs() <= v.abs() + 1e-6,
+            "it should compress, not expand"
+        );
+    }
+
+    // Small signals are barely touched; the term is a soft saturation
+    // rather than a gate.
+    let tiny = distortion(1e-4, 0.2, K, V0);
+    assert!(
+        (tiny - 1e-4).abs() / 1e-4 < 0.01,
+        "small signals moved too much"
+    );
+
+    // Zero strength is an exact bypass, so a caller can turn it off.
+    for v in [0.3f32, -0.8] {
+        assert_eq!(distortion(v, 0.1, 0.0, V0), v);
+    }
+
+    // And it stays finite at extremes.
+    for v in [1e6f32, -1e6, 0.0] {
+        assert!(distortion(v, 0.0, K, V0).is_finite());
+    }
+}

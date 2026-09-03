@@ -1,8 +1,15 @@
-//! A photoconductive cell driven by an electroluminescent panel: the
-//! light-dependent resistor at the heart of an optical compressor.
+//! The photoconductive element at the heart of an optical compressor, and
+//! the T4-family cell built around it.
 //!
-//! This is the T4-family cell, an electroluminescent panel glued to a
-//! cadmium-sulphide photoresistor, as used in the LA-2A and LA-3A. Its
+//! Two things live here, and the difference matters. [`distortion`] and
+//! the resistance laws are properties of a **photoresistor**, true of any
+//! of them; the Tube-Tech CL-1B, whose potted element is emphatically not
+//! a T4 and which refuses this crate's timing entirely, still obeys them.
+//! [`Cell`] and its time constants are the **T4** specifically, an
+//! electroluminescent panel glued to a cadmium-sulphide photoresistor, as
+//! used in the LA-2A and LA-3A.
+//!
+//! Taking the T4 cell first: its
 //! behaviour is not a set of time constants somebody chose. The panel's
 //! light follows the Alfrey-Taylor law, the photoresistor's conductance
 //! follows a power law in that light, and the carriers fall into traps and
@@ -13,7 +20,7 @@
 //!
 //! # What is a component and what is a circuit
 //!
-//! This crate is the cell alone. The resistive divider it shunts, the
+//! This crate is the element and the cell alone. The resistive divider it shunts, the
 //! sidechain that drives it and the make-up gain after it belong to the
 //! machine that uses it, not here, because those differ from unit to unit
 //! while the cell does not. The dividing line is worth stating because it
@@ -373,3 +380,31 @@ pub fn resistance_for(n_f: f32) -> f32 {
 
 #[cfg(test)]
 mod tests;
+
+/// The photoconductor's own distortion: an odd-order term that grows with
+/// how hard the cell is working.
+///
+/// A photoresistor is not a linear resistor. The voltage across it moves
+/// its operating point within a sample, so it distorts in proportion to
+/// that voltage, which is why the term is scaled by how much the cell is
+/// attenuating: a dark cell passing the signal barely distorts, and a lit
+/// one working hard does.
+///
+/// `v` is the already-attenuated sample, `attenuation` the cell's gain
+/// (1.0 dark, falling as it lights), and `k` and `v0` the strength and the
+/// reference amplitude. Those two stay with the caller, because each unit
+/// anchors them to its own published distortion figure and they differ by
+/// a factor of six across the three optical compressors this serves. The
+/// law is the part's; the depth is the machine's.
+///
+/// Where the caller taps its detector relative to this is also the
+/// caller's: two of those compressors distort the audio node and then take
+/// the sidechain from it, so their detectors hear the distortion, while a
+/// third takes its detector from a different node entirely.
+#[inline]
+pub fn distortion(v: f32, attenuation: f32, k: f32, v0: f32) -> f32 {
+    let kc = k * (1.0 - attenuation);
+    let q = v / v0;
+    let q2 = q * q;
+    v * (1.0 - kc * q2 / (1.0 + q2))
+}

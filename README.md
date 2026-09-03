@@ -17,7 +17,7 @@ noob-electrical-components = { git = "https://github.com/Noob-Audio-Engineering/
 
 | Crate | Feature | What it models |
 |---|---|---|
-| `noob-electrical-components-photocell` | `photocell` | The T4-family light-dependent resistor: an electroluminescent panel glued to a cadmium-sulphide photoresistor, with carrier traps and the programme dependence they cause. |
+| `noob-electrical-components-photocell` | `photocell` | The photoconductive element: its resistance and distortion laws, plus the T4-family cell built around it, with carrier traps and the programme dependence they cause. |
 
 ## What belongs here, and what does not
 
@@ -36,6 +36,12 @@ in the cell's own carriers, so borrowing this cell would have forced a
 60 ms attack and a half-second release onto a machine whose release knob
 runs to ten seconds. A boundary that has been tested by a real refusal is
 worth more than one argued from first principles.
+
+That refusal then drew the line inside the crate too. The CL-1B rejects the
+T4's timing, its panel law and its every time constant, and still
+implements the photoconductor's distortion term identically, so that term
+is a property of any photoresistor rather than of the T4. The crate holds
+both, and says which is which.
 
 **Circuitry does not belong here.** A component is the part. The resistive
 divider it shunts, the sidechain that drives it and the make-up gain after
