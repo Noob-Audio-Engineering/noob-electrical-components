@@ -72,21 +72,32 @@ these is built yet, and each waits for a second real user:
   functional form and not merely in parameters. If this crate ever holds
   both they are two components with two names, and this is the reason.
 
-  **And when it is built, it must not assume the family has one shape.**
-  Both candidate tubes were fitted to the same law, a transconductance
-  decaying as `exp(-(w/V0)^n)`, and their exponents were measured from the
-  manufacturers' own published curves rather than assumed. The Fairchild's
-  true remote-cutoff tube comes out at 1.01, give or take 0.16, which is a
-  clean exponential; the 176's semi-remote-cutoff tube comes out at 2.16,
-  which accelerates. Forcing the second figure onto the first costs an order
-  of magnitude in fit residual, and measuring both over the same span widens
-  the gap rather than closing it. So `n` is a per-tube-type parameter and
-  every tube needs its own fit against its own curve. Fitting one and
-  assuming the other is the specific mistake this note exists to prevent,
-  and it was nearly made twice: once from three datasheets that all quote a
-  single operating point, and once from comparing two average tapers, which
-  is a first-moment statistic and is blind to the curvature the exponent
-  measures.
+  **And when it is built, both tubes must be fitted by one documented
+  procedure.** Two researchers tried to settle whether the candidate tubes
+  share a shape, fitting transconductance to `exp(-(w/V0)^n)`, and the
+  useful result is that published data cannot answer it. One datasheet
+  gives only two transconductance points, which cannot fix three
+  parameters: assume the unpublished zero-bias value and the exponent runs
+  anywhere from 0.96 to 2.36. Worse, the *other* tube's exponent moves from
+  2.16 to 1.71 depending on whether it is anchored on interior or endpoint
+  values of its own single curve. An exponent read off a datasheet is
+  therefore not a stable quantity, and two exponents read off two datasheets
+  by two methods are not comparable at all.
+
+  So the constraint is procedural rather than numerical. If this component
+  is built, every tube's parameters come from **one** fitting procedure
+  using the same class of anchor points, written down. Two people each
+  fitting their own tube their own way and comparing the results afterwards
+  would be agreeing on an artefact. Whether the tubes truly share a shape is
+  still open, and a claimed measurement of one of them is in dispute over
+  which curve was traced.
+
+  Two near-misses on the way there are worth keeping, because both looked
+  like evidence. Three datasheets agreeing on an amplification factor say
+  nothing about its bias dependence when all three quote one operating
+  point. And two average tapers agreeing say nothing about shape, because an
+  average slope is a first-moment statistic and is blind to the curvature an
+  exponent measures.
 - **FET.** The 1176's gain element, currently inside that engine.
 
 Two entries have left this list, and the difference between how they left
