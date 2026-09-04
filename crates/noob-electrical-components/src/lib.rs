@@ -34,3 +34,7 @@
 #[cfg(feature = "photocell")]
 #[cfg_attr(docsrs, doc(cfg(feature = "photocell")))]
 pub use noob_electrical_components_photocell as photocell;
+
+#[cfg(feature = "diode-bridge")]
+#[cfg_attr(docsrs, doc(cfg(feature = "diode-bridge")))]
+pub use noob_electrical_components_diode_bridge as diode_bridge;

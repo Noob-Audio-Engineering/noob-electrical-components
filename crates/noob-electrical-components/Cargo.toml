@@ -16,5 +16,11 @@ default = []
 # light-dependent resistor an optical compressor is built around.
 photocell = ["dep:noob-electrical-components-photocell"]
 
+# The balanced diode bridge used as a gain element: four matched diodes
+# whose floating common nodes make its law a hyperbolic tangent rather
+# than a Lambert W.
+diode-bridge = ["dep:noob-electrical-components-diode-bridge"]
+
 [dependencies]
 noob-electrical-components-photocell = { workspace = true, optional = true }
+noob-electrical-components-diode-bridge = { workspace = true, optional = true }

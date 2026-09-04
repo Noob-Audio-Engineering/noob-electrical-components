@@ -35,6 +35,7 @@ jobs:
         run: |
           cargo check -p noob-electrical-components
           cargo check -p noob-electrical-components --features photocell
+          cargo check -p noob-electrical-components --features diode-bridge
 
       - name: Rustdoc
         env:

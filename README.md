@@ -18,6 +18,7 @@ noob-electrical-components = { git = "https://github.com/Noob-Audio-Engineering/
 | Crate | Feature | What it models |
 |---|---|---|
 | `noob-electrical-components-photocell` | `photocell` | The photoconductive element: its resistance and distortion laws, plus the T4-family cell built around it, with carrier traps and the programme dependence they cause. |
+| `noob-electrical-components-diode-bridge` | `diode-bridge` | The balanced diode bridge used as a gain element: four matched diodes whose floating common nodes make its law a hyperbolic tangent. |
 
 ## What belongs here, and what does not
 
@@ -66,9 +67,15 @@ these is built yet, and each waits for a second real user:
 - **FET.** The 1176's gain element, currently inside that engine.
 - **VCA.** The Distressor's, likewise, and shared with every mainstream
   VCA compressor.
-- **Diode bridge and variable-mu elements.** Neither exists yet. They are
-  the gain elements of two whole families the plug-ins do not cover, so
-  they will arrive with the first unit that needs one.
+- **Variable-mu element.** The gain element of a whole family the plug-ins
+  do not cover yet, so it will arrive with the first unit that needs one.
+
+The diode bridge was on this list and has since been built, arriving with
+the Neve 33609 as this note predicted. It is the one case so far admitted on
+the second half of the rule, *about to* be shared rather than already
+shared: it has one user today, and a second, the EMI TG12413, is next but
+one in the plug-in's build order. That is a weaker justification than the
+photocell's and is recorded as such.
 
 ## Standards
 
