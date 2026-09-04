@@ -62,12 +62,16 @@ the DSP lives.
 Named here so the boundary stays deliberate rather than accreting. None of
 these is built yet, and each waits for a second real user:
 
-- **Tube stage and transformer.** Both already exist in the 610 preamp of
-  the compressor lab's 6176, and both would be wanted by any variable-mu
-  unit, which is the next family to model.
+- **Transformer.** Already exists in the 610 preamp of the compressor lab's
+  6176, and would be wanted by any variable-mu unit.
+- **Remote-cutoff triode.** The gain element of the variable-mu family, and
+  not the same thing as the 610's tube stage. This entry used to read "tube
+  stage and transformer" and to claim a variable-mu unit would want the
+  610's; that was wrong. The 610's triode model was fitted for 12AX7-class
+  valves, which have no remote-cutoff characteristic, so the two differ in
+  functional form and not merely in parameters. If this crate ever holds
+  both they are two components with two names, and this is the reason.
 - **FET.** The 1176's gain element, currently inside that engine.
-- **Variable-mu element.** The gain element of a whole family the plug-ins
-  do not cover yet, so it will arrive with the first unit that needs one.
 
 Two entries have left this list, and the difference between how they left
 it is the most useful thing on this page.
@@ -90,6 +94,21 @@ it. "VCA" is a functional category covering the log-antilog cell, the
 operational transconductance amplifier and a field-effect transistor used as a
 variable resistor, which share a word rather than an equation; a crate called
 `Vca` would have been the fourth tube stage.
+
+**So the rule is tightened, and this is the change.** A component is admitted
+when two units are documented to contain it, not when one does and another is
+expected to. The *about to be shared* clause cost nothing to write and has now
+been wrong once, and it was wrong in the most expensive way available: the
+prediction came from a survey, the survey was believed, and the crate was
+built before the second unit had been researched closely enough to notice it
+was a different circuit. The next candidate to face this is the remote-cutoff
+triode, which has the Fairchild 670 built and the Universal Audio 176 planned,
+and it will wait for the 176 to actually contain one.
+
+The cheap way to hold this line is to write the part in one separable place
+inside the first plug-in that needs it, and lift it out when the second
+arrives. That costs a small refactor and buys a shape derived from two real
+users instead of one real user and a guess.
 
 ## Standards
 
