@@ -57,6 +57,29 @@ oversamplers and antiderivative anti-aliasing are infrastructure rather than
 components. They have no physical part behind them and they belong wherever
 the DSP lives.
 
+## The rule changed on 2026-09-04
+
+**Every electrical component a plug-in models belongs here**, on the user's instruction, whatever
+its user count. What follows below was the rule until then, and it is kept because the reasoning
+still applies to *how* a component is drawn even though it no longer decides *whether* one exists.
+
+So a part is no longer required to wait for a second documented user. What is still required is
+everything the old rule taught about shape:
+
+- **A component is a part, never a category.** "VCA" would have covered a log-antilog cell, an
+  operational transconductance amplifier and a field-effect transistor, which share a word and not
+  an equation. It is the Blackmer cell for that reason, and the same test applies to every crate
+  added from here.
+- **The crate holds the part and nothing around it.** The resistors that bias it, the detector that
+  drives it and the make-up gain after it are the machine, and they differ from unit to unit while
+  the part does not.
+- **A shape derived from one implementation is usually wrong for the second.** Where two plug-in
+  engines already contain the same part, reconcile both against the crate rather than lifting
+  whichever was written first.
+- **Record the evidence, and its asymmetry.** A part read off a manufacturer's drawing and a part
+  inferred from behaviour are both admissible now, but they are not the same thing and the crate
+  says which is which.
+
 ## Coming candidates
 
 Named here so the boundary stays deliberate rather than accreting. None of
