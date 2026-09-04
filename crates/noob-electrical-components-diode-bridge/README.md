@@ -95,3 +95,12 @@ level is about twice what that section states.
   DAFx-25, Ancona 2025, pages 63–70: the diode parameters, the
   odd-symmetry result reached independently for a symmetric bridge, and
   the recommendation to block DC either side of a diode gain element.
+
+## A note on this crate's history
+
+The law in `src/lib.rs` was still untracked when the commit that introduced
+this crate was made, so it was swept into the next commit, whose message is
+about the photocell. Two agents were committing here at once. Nothing is
+missing and nothing is wrong, but `git log` on that file leads somewhere
+surprising, and rewriting the history would have invalidated a dependency
+lock that already resolves one of those commits.
