@@ -89,22 +89,31 @@ these is built yet, and each waits for a second real user:
   is built, every tube's parameters come from **one** fitting procedure
   using the same class of anchor points, written down. Two people each
   fitting their own tube their own way and comparing the results afterwards
-  would be agreeing on an artefact. And the fits must come from the
-  **topology the part is used in**: the four-condition plot above is a
-  cascode connection, where the section's plate floats at the next tube's
-  cathode rather than sitting at its working voltage, so it is not the law
-  of the grounded-cathode stage either compressor actually runs.
+  would be agreeing on an artefact.
 
-  **Where it finally landed: the tubes do differ, by roughly a factor of two
-  in the exponent, and the two halves of that claim are not equally solid.**
-  The first tube's figure is measured, at 1.00 to 1.10 by two readers
-  working independently, on a logarithmic plot spanning three decades where
-  an exponential is a straight line. The second tube's is only bracketed, at
-  1.6 to 2.2, because both its manufacturers plotted it on linear axes that
-  cannot resolve the region below a fiftieth of full scale, and where they
-  can be read at all they disagree by up to sixty per cent. A figure of 2.16
-  circulated for a while and should not be quoted; it came from one maker's
-  curve and the other maker's gives 1.58.
+  **The constraint has three clauses and each was learned by getting it
+  wrong.** One documented fitting procedure, because the procedure moves the
+  answer. The same class of anchor points, because a fit to interior points
+  is not a fit to endpoints. And curves measured in the **same topology**,
+  because one tube's published plot is a cascode connection where the
+  section's plate floats at the next tube's cathode, the other's is a
+  single-section characteristic at a fixed plate voltage, and **neither is
+  the grounded-cathode stage either compressor actually runs**. Without all
+  three, two implementations agree on a number while disagreeing about the
+  curve, which is worse than not sharing at all, because it looks like
+  corroboration.
+
+  **Where it finally landed: the shape question is unanswerable from
+  published data, and no exponent quoted during the argument should be
+  reused.** The figures that circulated were 1.01, 1.10, 1.58, 1.71, 1.98
+  and 2.16, and each was someone's honest reading. The exponent moves by a
+  factor of 1.7 across four operating conditions on a single page for a
+  single tube; it moves from 2.16 to 1.71 for the other tube on a change of
+  anchor points within one curve; and it moves from 2.16 to 1.58 between two
+  manufacturers' curves for that same tube. Condition-dependent,
+  anchor-dependent, procedure-dependent and maker-dependent. It is not a
+  property of a tube, so it was never a quantity on which two tubes could be
+  compared.
 
   **And this is now the sharpest argument for not building the part yet.**
   The parameter set a shared component would ship with today has been shown
