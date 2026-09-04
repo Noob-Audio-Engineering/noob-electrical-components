@@ -26,7 +26,45 @@ diode-bridge = ["dep:noob-electrical-components-diode-bridge"]
 # tolerances, temperature coefficient and even-order symmetry residual.
 blackmer-cell = ["dep:noob-electrical-components-blackmer-cell"]
 
+# The remote-cutoff triode: the gain element of a variable-mu limiter, an
+# anode-current law with a parameter set per valve type and nothing of the
+# circuit around it.
+remote-cutoff-triode = ["dep:noob-electrical-components-remote-cutoff-triode"]
+
+# The diode gain element of the EMI TG12413 and its Zener limiter
+# lineage: two arms of series junctions on a common supply rail, run in
+# reverse breakdown. Not a diode bridge, and the crate says why at length.
+diode-arm-pair = ["dep:noob-electrical-components-diode-arm-pair"]
+
+# A junction field-effect transistor used as a voltage-controlled variable
+# resistor: the 1176's gain element, its control law and the channel
+# resistance the signal across it modulates. One of the three circuits
+# "VCA" would have covered, and not the Blackmer cell.
+fet-variable-resistor = ["dep:noob-electrical-components-fet-variable-resistor"]
+
+# Blackmer's log-domain true-RMS detector: a bilateral log converter
+# charging a capacitor against a constant current, whose rate-limited
+# release and step-dependent attack are one time constant seen from two
+# sides. The technique only: it carries no ballistics controls.
+log-rms-detector = ["dep:noob-electrical-components-log-rms-detector"]
+
+# The small-signal triode gain stage of a 12AX7-class valve: a fixed-shape
+# saturating law whose bias sets the asymmetry and never the gain. The
+# ordinary preamp valve, and emphatically not the remote-cutoff one above.
+small-signal-triode = ["dep:noob-electrical-components-small-signal-triode"]
+
+# The audio transformer's low end: the roll-off its magnetising inductance
+# puts under the band, as a corner and a Q, and the flux its core can carry
+# before the rest of it stops reaching the secondary.
+transformer = ["dep:noob-electrical-components-transformer"]
+
 [dependencies]
 noob-electrical-components-photocell = { workspace = true, optional = true }
 noob-electrical-components-diode-bridge = { workspace = true, optional = true }
 noob-electrical-components-blackmer-cell = { workspace = true, optional = true }
+noob-electrical-components-remote-cutoff-triode = { workspace = true, optional = true }
+noob-electrical-components-diode-arm-pair = { workspace = true, optional = true }
+noob-electrical-components-fet-variable-resistor = { workspace = true, optional = true }
+noob-electrical-components-log-rms-detector = { workspace = true, optional = true }
+noob-electrical-components-small-signal-triode = { workspace = true, optional = true }
+noob-electrical-components-transformer = { workspace = true, optional = true }

@@ -1,0 +1,14 @@
+[package]
+name = "noob-electrical-components-log-rms-detector"
+description = "A physical model of Blackmer's log-domain true-RMS detector: a bilateral log converter charging a capacitor against a constant current, whose rate-limited release and step-dependent attack are one time constant seen from two sides"
+readme = "README.md"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+# Nothing here goes to crates.io until I say so.
+publish = false
+
+[dependencies]

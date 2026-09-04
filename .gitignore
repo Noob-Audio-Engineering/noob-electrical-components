@@ -1,5 +1,7 @@
 # Rust
 /target
+# Per-agent target directories, so several builds can run at once.
+/target-*
 
 # IDE and OS
 .idea/

@@ -90,6 +90,62 @@ resemblance people hear between the two really does come from the cell, and the
 large difference in how they behave on programme really does come from the
 detector, which is why no detector is modelled here.
 
+## The shape of the residual is not settled, and this crate says so
+
+The magnitude of the even-order residual is published several times over. Its
+**shape** is published nowhere, and the two units documented to contain the
+cell are modelled with two different ones, so `EvenResidual` carries both and
+the caller chooses.
+
+- **`HalfPathMismatch`,** `y = x + ε·|x|`, is the mechanism the symmetry trim
+  pin exists to null: the two halves of the waveform go through
+  opposite-conductivity transistors, and if those paths are not matched the two
+  halves are not amplified identically. Its relative second harmonic does not
+  depend on level.
+- **`Squarer`,** `y = x + ε·x²`, is a smooth even curvature — not what a gain
+  mismatch between two paths produces, but what a curvature common to both
+  does. Its relative second harmonic is proportional to level.
+
+What pulls each way is set out in full at `EvenResidual`, and neither argument
+wins. THAT's table publishes the two conditions away from unity gain with the
+*same* distortion, 0.020 %, although one raises the input 10 dB and the other
+lowers it 5 dB, which no residual proportional to input level can produce; and
+a level-independent residual is flat where that table clearly is not. So the
+crate holds both rather than picking one, which is what this repository's
+remote-cutoff triode entry was written to insist on.
+
+There is a consequence a caller should know before choosing. The squarer is
+exactly second order, so its output bandwidth is exactly twice its input
+bandwidth and two-times oversampling contains it with nothing left to fold. The
+mismatch shape has a corner at the origin, its spectrum does not stop, and no
+oversampling ratio contains it.
+
+## The distortion is in the caller's units, and it says which
+
+`thd_unity` is the published second-harmonic ratio and `thd_peak` is the peak
+amplitude, in the caller's own units, at which that figure was measured. That
+second field exists because neither documented user works in volts. One is a
+compressor whose residual is level independent and has no reference level at
+all; the other works in sample amplitude and carries its own volts-per-sample
+calibration, which belongs to that console and not to this part. An interface
+that took volts and nothing else would have forced a multiply into volts and
+back on every sample for one of them and meant nothing for the other.
+
+`DBV_PEAK_VOLTS` is the answer for a caller working in volts, and it is the
+default, so nothing is silently assumed about a caller who never thinks about
+it.
+
+## The direct-current term, and where the coupling goes
+
+Both shapes have a non-zero mean, so `process` emits a small offset exactly as
+the part does. It is not removed here, because the capacitor that removes it in
+hardware is downstream of the cell and because a high-pass filter is
+infrastructure rather than a component. What is here is `process_coupled`, the
+seam a caller subtracts its own running mean of the residual at. Both real
+users needed that seam, at different corner frequencies and with different
+filters, and neither wanted the filter — which is the boundary landing where it
+should.
+
 ## What is estimated, and what is missing
 
 Two things, both flagged in the code and in the tests:

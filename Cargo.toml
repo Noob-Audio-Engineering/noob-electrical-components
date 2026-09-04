@@ -5,6 +5,12 @@ members = [
     "crates/noob-electrical-components-photocell",
     "crates/noob-electrical-components-diode-bridge",
     "crates/noob-electrical-components-blackmer-cell",
+    "crates/noob-electrical-components-remote-cutoff-triode",
+    "crates/noob-electrical-components-diode-arm-pair",
+    "crates/noob-electrical-components-fet-variable-resistor",
+    "crates/noob-electrical-components-log-rms-detector",
+    "crates/noob-electrical-components-small-signal-triode",
+    "crates/noob-electrical-components-transformer",
 ]
 
 [workspace.package]
@@ -22,6 +28,12 @@ homepage = "https://github.com/Noob-Audio-Engineering/noob-electrical-components
 noob-electrical-components-photocell = { path = "crates/noob-electrical-components-photocell", version = "0.1.0" }
 noob-electrical-components-diode-bridge = { path = "crates/noob-electrical-components-diode-bridge", version = "0.1.0" }
 noob-electrical-components-blackmer-cell = { path = "crates/noob-electrical-components-blackmer-cell", version = "0.1.0" }
+noob-electrical-components-remote-cutoff-triode = { path = "crates/noob-electrical-components-remote-cutoff-triode", version = "0.1.0" }
+noob-electrical-components-diode-arm-pair = { path = "crates/noob-electrical-components-diode-arm-pair", version = "0.1.0" }
+noob-electrical-components-fet-variable-resistor = { path = "crates/noob-electrical-components-fet-variable-resistor", version = "0.1.0" }
+noob-electrical-components-log-rms-detector = { path = "crates/noob-electrical-components-log-rms-detector", version = "0.1.0" }
+noob-electrical-components-small-signal-triode = { path = "crates/noob-electrical-components-small-signal-triode", version = "0.1.0" }
+noob-electrical-components-transformer = { path = "crates/noob-electrical-components-transformer", version = "0.1.0" }
 
 [profile.release]
 lto = "thin"

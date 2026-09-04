@@ -1,0 +1,14 @@
+[package]
+name = "noob-electrical-components-transformer"
+description = "A model of the audio transformer's low end: the roll-off its magnetising inductance puts under the band, as a corner and a Q, and the flux its core can carry before the rest of it stops reaching the secondary"
+readme = "README.md"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+# Nothing here goes to crates.io until I say so.
+publish = false
+
+[dependencies]

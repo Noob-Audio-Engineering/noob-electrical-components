@@ -41,6 +41,26 @@
 //! and lit resistances and knows nothing about the 70.7 kilohm series
 //! resistor an LA-2A puts in front of it.
 //!
+//! The residual's **direct-current term** is the sharpest case of that
+//! line, and it is deliberate. Both even shapes have a non-zero mean, so
+//! [`BlackmerCell::process`] emits an offset, exactly as the part does.
+//! The coupling capacitor that removes it in hardware is downstream of the
+//! cell, so it is not here; what is here is
+//! [`BlackmerCell::process_coupled`], the seam a caller subtracts its own
+//! running mean at. Both real users needed that seam and neither wanted
+//! the filter, which is the boundary drawn where it should be.
+//!
+//! # The shape of the residual is not settled, and this crate says so
+//!
+//! The magnitude of the even-order residual is published several times
+//! over. Its **shape** is published nowhere, and the two units documented
+//! to contain this cell are modelled with two different ones, so
+//! [`EvenResidual`] carries both and the caller chooses. That is not a
+//! knob invented for taste; it is the state of the evidence, set out at
+//! [`EvenResidual`] with what pulls each way. A crate that picked one
+//! would be doing what this repository's own remote-cutoff triode entry
+//! was written to stop: fixing a shape from data that cannot fix it.
+//!
 //! # Who is documented to contain one
 //!
 //! Two units, on two manufacturers' own drawings, which is the standard
@@ -168,6 +188,127 @@ pub struct ThdTable {
     pub plus_15db_gain_minus_5dbv: [f32; 3],
 }
 
+/// The shape of the cell's even-order residual.
+///
+/// **The magnitude is published and the shape is not**, and the two units
+/// documented to contain this cell are modelled with different ones. This
+/// enum carries both rather than choosing, and this comment is the
+/// evidence on each side so that whoever does choose can see what they are
+/// choosing between.
+///
+/// # What each one is
+///
+/// [`HalfPathMismatch`](Self::HalfPathMismatch) is the mechanism the
+/// symmetry trim pin exists to null. The two halves of the waveform go
+/// through opposite-conductivity transistors, and if those paths are not
+/// matched the two halves are not amplified identically: `(1 + δ)·x` above
+/// zero and `(1 − δ)·x` below it, which is `x + δ·|x|` written once. It is
+/// piecewise linear with a corner at the origin.
+///
+/// [`Squarer`](Self::Squarer) is a smooth even curvature, `x + ε·x²`. It
+/// is not what a gain mismatch between two paths produces; it is what a
+/// curvature common to both paths produces.
+///
+/// # What pulls each way
+///
+/// **For the mismatch shape.** It is the mechanism this part's own trim
+/// pin addresses and the one every description of the cell names, and it
+/// is the only one whose derivation ends at `|x|`. Its relative second
+/// harmonic does not vary with level, which is what dbx assert of the 160
+/// when they call the second harmonic "relatively unaffected by
+/// compression ratio, time constants and frequency" and what their two
+/// published second-harmonic figures, 0.075 % at one operating point and
+/// 0.07 % at another, are consistent with. THAT's own table points the
+/// same way in one respect that a squarer cannot explain at all: the two
+/// conditions away from unity gain are published with the *same*
+/// distortion, 0.020 %, although one raises the input by 10 dB and the
+/// other lowers it by 5 dB. A residual proportional to input level would
+/// have to put those two rows a factor of six apart.
+///
+/// **For the squarer.** It fits the direction of THAT's table across the
+/// one pair of rows usually quoted, 0.005 % at 0 dBV against 0.020 % at
+/// +10 dBV, to within 27 % — where a level-independent residual is flat
+/// and so misses the second row by a factor of four. And it is exactly
+/// second order, so a caller oversampling it knows its output bandwidth
+/// is exactly twice its input bandwidth and that two times is enough. The
+/// mismatch shape has a corner, its spectrum does not stop, and no
+/// oversampling ratio contains it.
+///
+/// Neither argument wins. The third row of THAT's table falsifies input
+/// level dependence as badly as the first pair falsifies level
+/// independence, and the bandwidth difference is a property of the model
+/// rather than of the part.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum EvenResidual {
+    /// A gain mismatch between the two half-wave paths: `y = x + ε·|x|`.
+    ///
+    /// The default, because it is the mechanism the part's symmetry trim
+    /// exists to null.
+    #[default]
+    HalfPathMismatch,
+    /// A smooth even curvature: `y = x + ε·x²`.
+    Squarer,
+}
+
+impl EvenResidual {
+    /// The residual's unscaled term for one sample: `|x|` or `x²`.
+    ///
+    /// Separate from the coefficient because the mean of *this* is what a
+    /// caller's coupling capacitor removes, and a caller filtering the
+    /// scaled term instead would have to rescale its filter every time the
+    /// coefficient moved.
+    #[inline]
+    #[must_use]
+    pub fn shape(self, x: f32) -> f32 {
+        match self {
+            Self::HalfPathMismatch => x.abs(),
+            Self::Squarer => x * x,
+        }
+    }
+
+    /// The coefficient that reproduces a published second-harmonic ratio
+    /// `thd`, for a sine of peak amplitude `peak` in the caller's units.
+    ///
+    /// `peak` is ignored by [`HalfPathMismatch`](Self::HalfPathMismatch),
+    /// and that is the difference between the two shapes rather than an
+    /// oversight. A rectified sine carries a second harmonic of `4/(3π)`
+    /// of its own amplitude against a fundamental of one, whatever the
+    /// amplitude, so the coefficient is a pure ratio and a caller cannot
+    /// get its units wrong. A squared sine of peak `P` carries `P²/2`
+    /// against a fundamental of `P`, so the coefficient has units of
+    /// reciprocal amplitude and a caller that passes a peak in the wrong
+    /// units gets the wrong distortion with no error message.
+    #[inline]
+    #[must_use]
+    pub const fn coefficient_for_thd(self, thd: f32, peak: f32) -> f32 {
+        match self {
+            Self::HalfPathMismatch => thd * 3.0 * core::f32::consts::PI / 4.0,
+            Self::Squarer => 2.0 * thd / peak,
+        }
+    }
+
+    /// The second-harmonic ratio a coefficient produces, the inverse of
+    /// [`coefficient_for_thd`](Self::coefficient_for_thd).
+    #[inline]
+    #[must_use]
+    pub fn thd_for_coefficient(self, coefficient: f32, peak: f32) -> f32 {
+        match self {
+            Self::HalfPathMismatch => coefficient * 4.0 / (3.0 * core::f32::consts::PI),
+            Self::Squarer => coefficient * peak / 2.0,
+        }
+    }
+
+    /// Whether this shape's relative second harmonic depends on level.
+    ///
+    /// The one behavioural difference a caller can hear, stated as a
+    /// predicate so a test can assert it rather than a comment claim it.
+    #[inline]
+    #[must_use]
+    pub fn thd_varies_with_level(self) -> bool {
+        matches!(self, Self::Squarer)
+    }
+}
+
 /// One Blackmer gain cell.
 ///
 /// Construct from [`BlackmerCell::TYPICAL`] and adjust, rather than
@@ -194,14 +335,34 @@ pub struct BlackmerCell {
     /// Control-law linearity error, as a percentage of the specified span.
     /// Zero gives the exact exponential law. See [`LINEARITY_TYP_PCT`].
     pub linearity_pct: f32,
-    /// The cell's even-order residual, given as the total harmonic
-    /// distortion it produces at 0 dBV in at 0 dB gain, as a fraction.
+    /// The cell's even-order residual, given as the second-harmonic ratio
+    /// it produces at [`thd_peak`](Self::thd_peak), as a fraction.
     ///
     /// Expressed as the published measurement rather than as a polynomial
     /// coefficient on purpose: the coefficient depends on how the caller
-    /// scales its signal, the measurement does not, and it is the number
-    /// THAT actually print. See [`THD_UNTRIMMED`] for the grades.
+    /// scales its signal, the measurement does not, and it is the number a
+    /// manufacturer actually prints. See [`THD_UNTRIMMED`] for the grades.
     pub thd_unity: f32,
+    /// The peak amplitude, **in the caller's own units**, at which
+    /// [`thd_unity`](Self::thd_unity) was measured. Ignored when
+    /// [`residual`](Self::residual) is
+    /// [`EvenResidual::HalfPathMismatch`], whose relative second harmonic
+    /// does not depend on level.
+    ///
+    /// This field exists because neither unit documented to contain the
+    /// cell works in volts. One is a compressor whose residual is level
+    /// independent and has no reference level at all; the other works in
+    /// sample amplitude and carries its own volts-per-sample calibration,
+    /// which belongs to that console and not to this part. An interface
+    /// that took volts and nothing else would have forced a multiply into
+    /// volts and back on every sample for one and meant nothing for the
+    /// other. So the crate takes the caller's units and asks, once, what
+    /// the published figure was measured at. [`DBV_PEAK_VOLTS`] is that
+    /// answer for a caller working in volts, and it is the default.
+    pub thd_peak: f32,
+    /// Which even-order shape the residual takes. See [`EvenResidual`],
+    /// which records why this is a choice and not a fact.
+    pub residual: EvenResidual,
 }
 
 impl BlackmerCell {
@@ -216,6 +377,8 @@ impl BlackmerCell {
         symmetry_mv: 0.0,
         linearity_pct: 0.0,
         thd_unity: 0.0,
+        thd_peak: DBV_PEAK_VOLTS,
+        residual: EvenResidual::HalfPathMismatch,
     };
 
     /// An untrimmed typical cell, carrying the symmetry residual and the
@@ -305,29 +468,24 @@ pub const GRADE_C: usize = 2;
 
 /// Peak volts of a 0 dBV sine, the level THAT quote their distortion at.
 ///
-/// 0 dBV is one volt RMS, so the peak is the square root of two. This
-/// constant is the reason [`BlackmerCell::process`] is documented as
-/// taking **volts**: an even-order coefficient has units of reciprocal
-/// volts, so a caller feeding it signal normalised to full scale rather
-/// than referenced to a volt will get the wrong amount of distortion and
-/// no error message.
+/// 0 dBV is one volt RMS, so the peak is the square root of two. This is
+/// the default [`thd_peak`](BlackmerCell::thd_peak), which is what a
+/// caller working in volts wants; a caller working in anything else says
+/// so there rather than being silently assumed to be in volts.
 pub const DBV_PEAK_VOLTS: f32 = core::f32::consts::SQRT_2;
 
 impl BlackmerCell {
-    /// The even-order coefficient, in reciprocal volts, that produces this
-    /// cell's [`thd_unity`](Self::thd_unity).
-    ///
-    /// For a squared residual driven by a sine of peak amplitude A, the
-    /// second harmonic comes out at half the coefficient times A squared
-    /// against a fundamental of A, so the distortion fraction is the
-    /// coefficient times A over two, and the coefficient follows.
+    /// The even-order coefficient that produces this cell's
+    /// [`thd_unity`](Self::thd_unity), in the caller's own amplitude
+    /// units. See [`EvenResidual::coefficient_for_thd`].
     #[inline]
     #[must_use]
     pub fn even_coefficient(&self) -> f32 {
-        2.0 * self.thd_unity / DBV_PEAK_VOLTS
+        self.residual
+            .coefficient_for_thd(self.thd_unity, self.thd_peak)
     }
 
-    /// Apply the cell's own distortion to one sample, in **volts**.
+    /// Apply the cell's own distortion to one sample.
     ///
     /// This is the residual of a part whose two halves go through
     /// different transistors. If those paths are not identical the two
@@ -343,18 +501,51 @@ impl BlackmerCell {
     /// anywhere in the audio path. Callers wanting the former should write
     /// it themselves; this is only the latter.
     ///
-    /// A squared term has a mean, so this emits a small direct-current
-    /// offset, exactly as the real cell does. It is not removed here
-    /// because the coupling that removes it in hardware is downstream of
-    /// the part, and because a high-pass filter is infrastructure rather
-    /// than a component and this repository keeps those out.
+    /// **Where in the chain this goes.** Before the gain, not after it.
+    /// THAT publish 0.005 % at 0 dBV with 0 dB of gain and 0.020 % at
+    /// +10 dBV with −15 dB of gain; the second condition has the *lower*
+    /// output and four times the distortion, so the residual cannot be a
+    /// function of what leaves the cell. It is a current-mode part whose
+    /// distortion is set by the current driven into it, and the current is
+    /// the input voltage across a resistor. A caller multiplies by the
+    /// gain after calling this.
+    ///
+    /// **The direct-current term stays in.** Both even shapes have a
+    /// non-zero mean, so this emits a small offset exactly as the real
+    /// cell does. It is not removed here because the coupling that removes
+    /// it in hardware is downstream of the part, and because a high-pass
+    /// filter is infrastructure rather than a component and this
+    /// repository keeps those out. [`process_coupled`](Self::process_coupled)
+    /// is the seam for a caller that has its own.
     #[inline]
     #[must_use]
-    pub fn process(&self, x_volts: f32) -> f32 {
+    pub fn process(&self, x: f32) -> f32 {
         if self.thd_unity == 0.0 {
-            return x_volts;
+            return x;
         }
-        x_volts + self.even_coefficient() * x_volts * x_volts
+        x + self.even_coefficient() * self.residual.shape(x)
+    }
+
+    /// One sample through the cell with the residual's direct-current
+    /// term removed by the caller's own coupling.
+    ///
+    /// `dc` is the caller's running mean of [`EvenResidual::shape`],
+    /// which is what its coupling capacitor is holding off. Both units
+    /// documented to contain this cell keep exactly that and subtract it
+    /// here, at different corner frequencies and with different filters,
+    /// which is why the filter is theirs and the seam is this crate's:
+    /// subtracting the mean of the *residual* rather than high-passing the
+    /// output leaves the linear path flat, which is what an audio path
+    /// with no filters in it means.
+    ///
+    /// Passing zero gives [`process`](Self::process) exactly.
+    #[inline]
+    #[must_use]
+    pub fn process_coupled(&self, x: f32, dc: f32) -> f32 {
+        if self.thd_unity == 0.0 {
+            return x;
+        }
+        x + self.even_coefficient() * (self.residual.shape(x) - dc)
     }
 }
 

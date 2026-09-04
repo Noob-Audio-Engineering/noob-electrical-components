@@ -5,6 +5,11 @@
 //! the resistance laws are properties of a **photoresistor**, true of any
 //! of them; the Tube-Tech CL-1B, whose potted element is emphatically not
 //! a T4 and which refuses this crate's timing entirely, still obeys them.
+//! It is a caller now rather than only an example: it takes [`distortion`]
+//! with its own strength and reference amplitude, and it is what
+//! [`Photoresistor`] exists for, because a part whose conductance scale and
+//! whose lit resistance come from two different sources cannot use the
+//! single tied pair that [`resistance_for`] spells out.
 //! [`Cell`] and its time constants are the **T4** specifically, an
 //! electroluminescent panel glued to a cadmium-sulphide photoresistor, as
 //! used in the LA-2A and LA-3A.
@@ -24,11 +29,21 @@
 //! sidechain that drives it and the make-up gain after it belong to the
 //! machine that uses it, not here, because those differ from unit to unit
 //! while the cell does not. The dividing line is worth stating because it
-//! has already been tested by real use: the LA-2A and the LA-3A share this
-//! cell exactly, differing only in how hard they light it and in the
-//! resistances around it, while the Tube-Tech CL-1B deliberately does not
-//! use it at all, because its timing lives in an op-amp sidechain rather
-//! than in the cell's own carriers.
+//! has already been tested by real use.
+//!
+//! The LA-2A and the LA-3A share this cell's every time constant, its
+//! panel law and its exponent. They differ in how hard they light it, in
+//! the resistances around it, and in one number of the part's own: the lit
+//! resistance, 500 Ω against 400 Ω, which each unit derives from its own
+//! published maximum gain reduction. That is why [`Photoresistor`] takes
+//! the endpoints as fields rather than reading the constants — the
+//! *second* user already needed its own lit resistance, and only the third
+//! needed its own conductance scale.
+//!
+//! The Tube-Tech CL-1B deliberately does not use that cell at all, because
+//! its timing lives in an op-amp sidechain rather than in the cell's own
+//! carriers. It uses the laws above and stops there, which is the boundary
+//! drawn from the outside.
 //!
 //! # Variants
 //!
@@ -78,6 +93,35 @@ pub const R_DARK: f32 = 2.0e6;
 /// cell, it works out at 38.3 dB. Both figures are asserted in the tests,
 /// because the smaller one used to be stated here as the cell's own range
 /// without a derivation and it is not.
+///
+/// # This is the least anchored of the three numbers, and here is why
+///
+/// [`CELL_GAMMA`] is a pick inside a cited range. This is a pick
+/// **outside** one. The LA-2A dossier's design table names 0.5 kΩ and
+/// cites the published figure for a lit cell as 0.68 to 2 kΩ, so the value
+/// in use sits below the bottom of its own range, and deliberately: the
+/// dossier's own derivation is that `R_DARK` of 2 MΩ with `R_min` of
+/// 0.5 kΩ gives about 38 dB through the divider, "matching the 40 dB
+/// specification". So it is fitted to a machine's published maximum gain
+/// reduction rather than measured on a part.
+///
+/// The LA-3A does the same thing and lands at 400 Ω, further below the
+/// range again, for its own published 40 dB. That is not two different
+/// standards of evidence, it is one method applied twice, and it is why
+/// the lit resistance is a [`Photoresistor`] field rather than a constant
+/// every optical compressor shares.
+///
+/// Read the three numbers accordingly: the dark resistance is a datasheet
+/// figure, the conductance scale follows from the endpoints or from a
+/// calibration, and **this one is a consequence of a specification** that
+/// happens to be expressed in ohms.
+///
+/// # What would justify moving it
+///
+/// A measurement of a T4's lit resistance. Not a test result and not a
+/// tidying-up towards the quoted range: this value sets the maximum
+/// reduction of two shipped compressors, and both of their gain-reduction
+/// figures were fitted with it where it is.
 pub const R_MIN: f32 = 500.0;
 
 /// Electroluminescent light law exponent (`L = exp(−b / √(u / V_ref))`).
@@ -611,11 +655,100 @@ impl Cell {
     }
 }
 
+/// A photoresistor's static law: the two resistances it runs between, and
+/// how much conductance a carrier population carries between them.
+///
+/// This is the **general** half of this crate, in the sense the module
+/// documentation draws: true of any photoresistor, where [`Cell`] and its
+/// time constants are the T4 alone. It is parameterised because the part
+/// that established that line needs it to be. The Tube-Tech CL-1B's
+/// element is a potted assembly nobody outside Lydkraft has seen, and it
+/// refuses the T4's timing while obeying its laws, so it wants this law
+/// with its own three numbers rather than [`resistance_for`]'s.
+///
+/// # Why `k_g` is a field rather than derived from the endpoints
+///
+/// **Three fields where two would apparently do, and the third field is
+/// the whole point. Please do not collapse them.** What follows is which
+/// unit supplied which half of the argument, so the next reader can see
+/// that this was paid for rather than guessed.
+///
+/// *The LA-2A and the LA-3A supplied the tied case.* Both shunt an actual
+/// T4B, and in a T4 the lit endpoint and the conductance scale are one
+/// fact: [`K_G`] is `1/R_MIN − 1/R_DARK`, so a carrier population of
+/// exactly 1.0 lands on exactly [`R_MIN`], and [`T4`](Self::T4) says so.
+/// Read only from those two, `k_g` is redundant and a reader would be
+/// right to delete it. The plug-in's own divider asserts that tie for both
+/// units, precisely so removing the field would fail a test rather than
+/// pass one.
+///
+/// *The Tube-Tech CL-1B supplied the untied case.* Its scale is solved
+/// from a service-manual calibration, 250 mV into the side-chain jack
+/// giving exactly 10 dB of reduction, while its minimum resistance is a
+/// separate estimate whose whole job is to set a maximum reduction nobody
+/// publishes. The two numbers have two sources and neither follows from
+/// the other; deriving one would attach a manual's measurement to a guess.
+///
+/// So the field exists because a third user has a fact the first two
+/// cannot express, and that is exactly the case this repository's founding
+/// argument is about: a shape read off one implementation, or off two that
+/// happen to agree, is usually wrong for the next. Here the argument was
+/// written down as a principle first and then paid out, which is worth
+/// more than either half alone.
+///
+/// # It is a part rather than a category
+///
+/// The name looks like the sort of functional grouping this repository
+/// refuses, as `Vca` was refused for covering three gain elements that
+/// share a word and not an equation. This is the other case: a
+/// cadmium-sulphide pair and whatever is potted inside the CL-1B share the
+/// equation itself, conductance affine in the carriers and resistance
+/// clamped to two endpoints, and differ only in the three numbers. The
+/// module documentation asserts exactly that, and this struct is where it
+/// becomes callable.
+///
+/// [`distortion`] deliberately stays a free function rather than joining
+/// this struct, because its `k` and `v0` belong to the machine rather than
+/// to the part; see its own documentation.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Photoresistor {
+    /// Resistance in darkness, and the upper clamp (ohms).
+    pub r_dark: f32,
+    /// Resistance under the most light the part will see, and the lower
+    /// clamp (ohms). It sets the maximum attenuation the part can reach,
+    /// and it need not be where a carrier population of 1.0 lands.
+    pub r_min: f32,
+    /// Conductance added by a carrier population of 1.0, in siemens.
+    pub k_g: f32,
+}
+
+impl Photoresistor {
+    /// The T4's cadmium-sulphide pair: [`R_DARK`], [`R_MIN`] and the
+    /// [`K_G`] that ties them together, which is the case
+    /// [`resistance_for`] spells without parameters.
+    pub const T4: Photoresistor = Photoresistor {
+        r_dark: R_DARK,
+        r_min: R_MIN,
+        k_g: K_G,
+    };
+
+    /// Resistance for a carrier population `n`, clamped to this part's own
+    /// two endpoints.
+    #[inline]
+    pub fn resistance(&self, n: f32) -> f32 {
+        let g = 1.0 / self.r_dark + self.k_g * n;
+        (1.0 / g).clamp(self.r_min, self.r_dark)
+    }
+}
+
 /// Cell resistance for `n_f` free carriers (conductance linear in `n_f`).
+///
+/// The T4's own endpoints and its own scale. A photoresistor with
+/// different ones, which is any part that is not a T4, wants
+/// [`Photoresistor`] instead.
 #[inline]
 pub fn resistance_for(n_f: f32) -> f32 {
-    let g = 1.0 / R_DARK + K_G * n_f;
-    (1.0 / g).clamp(R_MIN, R_DARK)
+    Photoresistor::T4.resistance(n_f)
 }
 
 #[cfg(test)]

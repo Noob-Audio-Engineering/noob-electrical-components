@@ -97,13 +97,22 @@
 //! is the *best* case, because on the reading the drawing actually supports
 //! there is no tanh to be wrong about.
 //!
-//! **So the TG12413's element is built inside its own plug-in, not here.**
-//! A law that carried junctions-per-arm and a bulk resistance would contain
-//! both, and the note in that plug-in's `element` module derives it. It has
-//! not been lifted into this crate, because a component earns its place once
-//! something real shares it and this ring still has exactly one certain
-//! user. Widening a part to fit a case nobody has settled stops it
-//! describing anything.
+//! **So the TG12413's element is a second, separate component**, and it is
+//! `noob-electrical-components-diode-arm-pair`. Its law carries
+//! junctions-per-arm and a bulk resistance and so contains this ring as the
+//! corner `n = 1, r_b = 0`; that containment is asserted there against this
+//! crate's own numbers, to the last bits an `f32` has. Containing this law
+//! is not being it. Widening *this* crate to reach the other case would
+//! have produced a part that describes neither circuit, so there are two
+//! crates and each says what the other is.
+//!
+//! **And the constants are the trap, not the safeguard.** Both crates rest
+//! on the same published `η` and `V_T`, so [`THERMAL_SCALE`] here and a
+//! two-junction arm's `v_n` there are the same number, about 90.7 mV, for
+//! different reasons — two arms each of one junction against two junctions
+//! inside one arm — and they sit in different places in the two formulas.
+//! Matching them and concluding the parts are the same is exactly the error
+//! this section exists to prevent.
 //!
 //! # What is estimated
 //!

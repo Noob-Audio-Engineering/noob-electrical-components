@@ -134,6 +134,81 @@ fn resistance_runs_between_dark_and_full_light() {
     assert_eq!(Cell::carriers_for(0.0, &p), 0.0);
 }
 
+/// The resistance law belongs to any photoresistor, and its lit endpoint
+/// and its conductance scale are separate facts.
+///
+/// *No figure is published for this*, because it is not a magnitude. It is
+/// the shape of the law and which of its three numbers may be derived from
+/// which, so what is asserted is a shape and an independence. The T4 path
+/// must be untouched, a part with other endpoints must get them, and a
+/// scale that does not land on the lit endpoint must be honoured rather
+/// than corrected towards it.
+///
+/// That last clause is the Tube-Tech CL-1B's case, and it is why the
+/// scale is a field. Its scale comes from the service manual's
+/// calibration, 250 mV of side-chain drive for exactly 10 dB of
+/// reduction, and its minimum resistance is a separate estimate that sets
+/// a maximum reduction nobody publishes. The two are unrelated numbers,
+/// where in a T4 they are one.
+#[test]
+fn a_photoresistors_endpoints_and_its_scale_are_separate_facts() {
+    // The T4 is the case where they are one fact, and it must be
+    // bit-for-bit what it was.
+    for i in 0..=100 {
+        let n = i as f32 / 100.0;
+        assert_eq!(
+            Photoresistor::T4.resistance(n),
+            resistance_for(n),
+            "the T4's own path moved at n = {n}"
+        );
+    }
+
+    // And the T4 is *tied*: full carriers land on the lit endpoint, so
+    // read from this part alone `k_g` is redundant. That is the reading
+    // the CL-1B refutes below, and it is asserted here so anyone tempted
+    // to derive the scale from the endpoints sees both cases together.
+    assert!(
+        (Photoresistor::T4.resistance(1.0) - R_MIN).abs() < 1.0,
+        "the T4 stopped being tied: full carriers land on {}",
+        Photoresistor::T4.resistance(1.0)
+    );
+
+    // A part whose scale is set by a calibration well short of its floor:
+    // a population of 1.0 must land where the scale says, not on `r_min`.
+    let scale_at_5k = 1.0 / 5.0e3 - 1.0 / R_DARK;
+    let gre = Photoresistor {
+        r_dark: R_DARK,
+        r_min: 40.0,
+        k_g: scale_at_5k,
+    };
+    let at_one = gre.resistance(1.0);
+    assert!(
+        (at_one - 5.0e3).abs() < 1.0,
+        "the scale was overridden by the floor: {at_one}"
+    );
+    assert!(
+        at_one > gre.r_min,
+        "a scale short of the floor must stay short of it"
+    );
+
+    // Both endpoints still clamp, and they are this part's rather than
+    // the T4's.
+    assert_eq!(gre.resistance(0.0), R_DARK, "a dark part is not r_dark");
+    assert_eq!(gre.resistance(1e6), 40.0, "the part's own floor must clamp");
+    assert!(
+        gre.resistance(1e6) < R_MIN,
+        "a part with a lower floor than the T4 must be allowed to reach it"
+    );
+
+    // Monotonic between them, over a range that crosses the floor.
+    let mut last = f32::INFINITY;
+    for i in 0..=2000 {
+        let r = gre.resistance(i as f32 / 10.0);
+        assert!(r <= last + 1e-3, "resistance rose with carriers at {i}");
+        last = r;
+    }
+}
+
 /// The cell attacks faster than it releases, and releases in two stages.
 ///
 /// *Figure asserted:* the **ordering and the shape**, which is what the

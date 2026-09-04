@@ -6,8 +6,15 @@ one floating common node and leaving the other. Forward-biasing the diodes
 sets how much signal current the bridge passes, so the control current sets
 a resistance and whatever divider the machine puts around it sets the gain.
 
-Neve used exactly this as the attenuator of the 2254 and the 33609. It also
-turns up in the Siemens U273 and the EMI TG12413.
+Neve used exactly this as the attenuator of the 2254 and the 33609, and it
+turns up in the Siemens U273.
+
+**It is not the EMI TG12413's element**, though this page used to say so.
+That module's four diodes are two series branches sharing a supply rail and
+as drawn they run in reverse breakdown, which is a different circuit in six
+structural respects; it has its own crate,
+`noob-electrical-components-diode-arm-pair`, and that crate's README sets
+the two side by side.
 
 ## Why the law is a hyperbolic tangent
 
@@ -48,9 +55,9 @@ resistance it implies.
 Not here: the series and shunt resistors that turn it into an attenuator,
 the sidechain that produces the control current, the shaping network
 between them, or the transformers on either side. Those are the machine,
-and they differ between the 2254, the 33609 and the TG12413 while the
-bridge does not. Solving the node equation of a particular divider is the
-caller's job, which is what the slope is exported for.
+and they differ between the 2254 and the 33609 while the bridge does not.
+Solving the node equation of a particular divider is the caller's job,
+which is what the slope is exported for.
 
 ## What is estimated
 

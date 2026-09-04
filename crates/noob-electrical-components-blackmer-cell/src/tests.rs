@@ -219,20 +219,135 @@ fn measured_thd2(cell: &BlackmerCell, peak: f32) -> f32 {
 /// This runs a real sine through the cell and measures the second
 /// harmonic, rather than reading back the coefficient that produced it,
 /// which is the only version of this test worth having.
+///
+/// **Both residual shapes are checked against the same published figure.**
+/// That is the point of carrying two: the magnitude is published, so
+/// either shape must reproduce it at the published condition, and what
+/// separates them is what happens away from that condition.
 #[test]
 fn distortion_matches_the_published_figure() {
-    for grade in [GRADE_A, GRADE_B, GRADE_C] {
-        let published = THD_UNTRIMMED.unity_gain_0dbv[grade];
-        let cell = BlackmerCell {
-            thd_unity: published,
-            ..BlackmerCell::TYPICAL
+    for residual in [EvenResidual::HalfPathMismatch, EvenResidual::Squarer] {
+        for grade in [GRADE_A, GRADE_B, GRADE_C] {
+            let published = THD_UNTRIMMED.unity_gain_0dbv[grade];
+            let cell = BlackmerCell {
+                thd_unity: published,
+                residual,
+                ..BlackmerCell::TYPICAL
+            };
+            let measured = measured_thd2(&cell, DBV_PEAK_VOLTS);
+            assert!(
+                (measured - published).abs() < published * 0.01,
+                "{residual:?}, grade {grade}: measured {measured:.6}, \
+                 published {published:.6}"
+            );
+        }
+    }
+}
+
+/// The coefficient and the published figure are inverses of each other,
+/// for both shapes and at a reference amplitude that is not one.
+///
+/// A round trip rather than a value: the arithmetic relating a
+/// second-harmonic ratio to a polynomial coefficient is the part of this
+/// crate a caller is most likely to reimplement by hand and get wrong by a
+/// factor of two or of `4/(3π)`.
+#[test]
+fn the_coefficient_and_the_published_figure_invert() {
+    for residual in [EvenResidual::HalfPathMismatch, EvenResidual::Squarer] {
+        for peak in [0.1024f32, DBV_PEAK_VOLTS, 10.0] {
+            for thd in [0.00005f32, 0.00075, 0.03] {
+                let c = residual.coefficient_for_thd(thd, peak);
+                let back = residual.thd_for_coefficient(c, peak);
+                assert!(
+                    (back - thd).abs() < thd * 1e-5,
+                    "{residual:?} at peak {peak}: {thd} went round to {back}"
+                );
+            }
+        }
+    }
+}
+
+/// The one behaviour that separates the two shapes: halving the level
+/// halves the squarer's relative second harmonic and leaves the
+/// mismatch's alone.
+///
+/// This is the difference a caller is choosing between, so it is asserted
+/// rather than described. Neither branch is a published figure and neither
+/// is claimed to be: what is published is the magnitude at one condition,
+/// which the test above checks, and the slope away from it is exactly the
+/// thing no datasheet settles.
+#[test]
+fn the_two_shapes_differ_only_in_how_they_follow_level() {
+    let at = |residual: EvenResidual, peak: f32| {
+        measured_thd2(
+            &BlackmerCell {
+                thd_unity: 0.001,
+                residual,
+                ..BlackmerCell::TYPICAL
+            },
+            peak,
+        )
+    };
+    for residual in [EvenResidual::HalfPathMismatch, EvenResidual::Squarer] {
+        let loud = at(residual, DBV_PEAK_VOLTS);
+        let quiet = at(residual, DBV_PEAK_VOLTS * 0.5);
+        let want = if residual.thd_varies_with_level() {
+            0.5
+        } else {
+            1.0
         };
-        let measured = measured_thd2(&cell, DBV_PEAK_VOLTS);
         assert!(
-            (measured - published).abs() < published * 0.01,
-            "grade {grade}: measured {measured:.6}, published {published:.6}"
+            (quiet / loud - want).abs() < 1e-3,
+            "{residual:?}: 6 dB down moved the second harmonic by \
+             {:.4}, wanted {want}",
+            quiet / loud
         );
     }
+}
+
+/// Both shapes emit a direct-current term, and
+/// [`BlackmerCell::process_coupled`] is where a caller takes it out.
+///
+/// This is the crate's boundary in one test. The offset is real, the part
+/// produces it, and the coupling capacitor that removes it is downstream
+/// and belongs to the machine — so the term is emitted here and the seam
+/// to remove it is offered here, and the filter is not.
+#[test]
+fn the_residual_emits_direct_current_and_the_seam_removes_it() {
+    const N: usize = 4096;
+    for residual in [EvenResidual::HalfPathMismatch, EvenResidual::Squarer] {
+        let cell = BlackmerCell {
+            thd_unity: 0.01,
+            residual,
+            ..BlackmerCell::TYPICAL
+        };
+        let peak = DBV_PEAK_VOLTS;
+        let sample =
+            |n: usize| peak * ((core::f64::consts::TAU * n as f64 / N as f64).sin() as f32);
+        let raw: f64 = (0..N).map(|n| f64::from(cell.process(sample(n)))).sum();
+        assert!(
+            raw / N as f64 > 1e-4,
+            "{residual:?} emitted no offset: {:.3e}",
+            raw / N as f64
+        );
+        // The caller's coupling: the mean of the shape, which is what its
+        // capacitor is holding off.
+        let dc = (0..N)
+            .map(|n| f64::from(residual.shape(sample(n))))
+            .sum::<f64>()
+            / N as f64;
+        let coupled: f64 = (0..N)
+            .map(|n| f64::from(cell.process_coupled(sample(n), dc as f32)))
+            .sum();
+        assert!(
+            (coupled / N as f64).abs() < 1e-5,
+            "{residual:?} kept an offset after coupling: {:.3e}",
+            coupled / N as f64
+        );
+    }
+    // And a zero mean is the same as no coupling at all.
+    let c = BlackmerCell::UNTRIMMED;
+    assert_eq!(c.process_coupled(0.3, 0.0), c.process(0.3));
 }
 
 /// The residual is even-order, because the two halves of the signal go
@@ -251,17 +366,45 @@ fn the_residual_is_even_order() {
     assert_eq!(BlackmerCell::TYPICAL.process(0.5), 0.5);
 }
 
-/// Distortion is quoted at a **voltage**, so a caller that feeds the cell
-/// something normalised to full scale instead of referenced to a volt
-/// gets a different answer. This test exists to make that dependency
-/// visible rather than to bless it: it is why the parameter is named in
-/// volts and documented twice.
+/// The squarer's distortion is quoted at an amplitude, so a caller working
+/// in something other than volts must say so, and a caller that does say
+/// so gets the published figure back.
+///
+/// This is the field that exists because the two real users work in two
+/// different units and neither is volts. A cell told that its published
+/// 0.005 % was measured at a peak of 0.1025 in the caller's own scale
+/// produces 0.005 % there — not at √2, which is where a crate that assumed
+/// volts would have put it, and which is a factor of fourteen away.
 #[test]
-fn distortion_scales_with_level_as_a_squared_term_must() {
-    let c = BlackmerCell::UNTRIMMED;
-    let at_0dbv = measured_thd2(&c, DBV_PEAK_VOLTS);
-    let at_minus_6 = measured_thd2(&c, DBV_PEAK_VOLTS * 0.5);
-    assert!((at_minus_6 / at_0dbv - 0.5).abs() < 1e-3);
+fn the_published_figure_holds_in_the_callers_own_units() {
+    let published = THD_UNTRIMMED.unity_gain_0dbv[GRADE_A];
+    // A console whose unit sample amplitude is 13.794 V: √2 volts of
+    // datasheet condition is 0.10252 of full scale.
+    let peak = DBV_PEAK_VOLTS / 13.794;
+    let cell = BlackmerCell {
+        thd_unity: published,
+        thd_peak: peak,
+        residual: EvenResidual::Squarer,
+        ..BlackmerCell::TYPICAL
+    };
+    let measured = measured_thd2(&cell, peak);
+    assert!(
+        (measured - published).abs() < published * 0.01,
+        "measured {measured:.7} in the caller's units, published {published:.7}"
+    );
+    // And the mismatch shape needs no such declaration, because its
+    // relative second harmonic is the same everywhere.
+    let flat = BlackmerCell {
+        residual: EvenResidual::HalfPathMismatch,
+        ..cell
+    };
+    for p in [peak, DBV_PEAK_VOLTS, 100.0] {
+        let m = measured_thd2(&flat, p);
+        assert!(
+            (m - published).abs() < published * 0.01,
+            "at peak {p} the mismatch shape gave {m:.7}"
+        );
+    }
 }
 
 /// A miss, recorded rather than hidden.
@@ -283,4 +426,16 @@ fn gain_dependent_distortion_is_a_known_gap() {
     }
     assert_eq!(t.unity_gain_0dbv[GRADE_B], 0.00010);
     assert_eq!(t.minus_15db_gain_plus_10dbv[GRADE_B], 0.00030);
+
+    // And the shape of the table, which is the part [`EvenResidual`] cites.
+    // THAT's two conditions away from unity gain are published with the
+    // *same* distortion although one raises the input 10 dB above the
+    // reference and the other lowers it 5 dB below: the table is symmetric
+    // in gain deviation and says nothing consistent about input level.
+    for g in [GRADE_A, GRADE_B, GRADE_C] {
+        assert_eq!(
+            t.minus_15db_gain_plus_10dbv[g], t.plus_15db_gain_minus_5dbv[g],
+            "grade {g}: the two off-unity rows are published equal"
+        );
+    }
 }

@@ -20,6 +20,12 @@ noob-electrical-components = { git = "https://github.com/Noob-Audio-Engineering/
 | `noob-electrical-components-photocell` | `photocell` | The photoconductive element: its resistance and distortion laws, plus the T4-family cell built around it, with carrier traps and the programme dependence they cause. |
 | `noob-electrical-components-diode-bridge` | `diode-bridge` | The balanced diode bridge used as a gain element: four matched diodes whose floating common nodes make its law a hyperbolic tangent. |
 | `noob-electrical-components-blackmer-cell` | `blackmer-cell` | David Blackmer's log-antilog gain cell: the constant-decibels-per-volt control law behind the dbx 202 and the THAT 2180, with its tolerances, temperature coefficient and even-order symmetry residual. |
+| `noob-electrical-components-remote-cutoff-triode` | `remote-cutoff-triode` | The remote-cutoff triode: the gain element of a variable-mu limiter, with a parameter set per valve type, one of them refitted where the published law was never constrained. |
+| `noob-electrical-components-diode-arm-pair` | `diode-arm-pair` | The diode gain element of the EMI TG12413 and its Zener limiter lineage: two arms of series junctions on a common supply rail, run in reverse breakdown. Four diodes like the bridge above and a different circuit in six structural respects; each crate says so at length, because the two will otherwise be merged. |
+| `noob-electrical-components-log-rms-detector` | `log-rms-detector` | Blackmer's log-domain true-RMS detector: a bilateral log converter charging a capacitor against a constant current, whose rate-limited release and step-dependent attack are one time constant seen from two sides. The technique and no ballistics, because that boundary was drawn by a refusal. |
+| `noob-electrical-components-fet-variable-resistor` | `fet-variable-resistor` | A junction field-effect transistor used as a voltage-controlled variable resistor: the 1176's gain element, its saturating control law and the channel resistance its own drain-source swing modulates. One of the three circuits "VCA" would have covered, and the crate names the other two. |
+| `noob-electrical-components-small-signal-triode` | `small-signal-triode` | The ordinary preamp valve: half a 12AX7-class double triode in a class-A common-cathode stage, as a fixed-shape saturating law whose bias sets the asymmetry and never the gain. A second valve, and not the remote-cutoff one; each crate says why the other cannot serve, because these two will otherwise be merged. |
+| `noob-electrical-components-transformer` | `transformer` | An audio transformer's low end: the roll-off its magnetising inductance puts under the band, as a corner and a Q of either order, and the flux its core can carry before the rest of it stops reaching the secondary. The linear failure and the nonlinear one, which is why transformer distortion arrives at the bottom of the band first. |
 
 ## What belongs here, and what does not
 
@@ -30,8 +36,14 @@ second one, and I would rather discover the right shape from two real users
 than guess it from one.
 
 The photocell qualified on both counts. Two compressors already shared it,
-the LA-2A and the LA-3A, which use the same cell and differ only in how hard
-they light it and in the resistances around it. And a third established
+the LA-2A and the LA-3A, which use the same cell — every time constant, the
+panel law and the exponent — and differ in how hard they light it, in the
+resistances around it, and in one number of the part's own: the lit
+resistance, 500 Ω against 400 Ω, each derived from that unit's published
+maximum gain reduction. This page used to say they differ *only* in the
+lighting and the surrounding resistances, which was wrong by one number,
+and the number it was wrong about is one of the three a photoresistor
+has. And a third established
 where its edge lies by deliberately *not* using it: the Tube-Tech CL-1B is
 an optical compressor whose timing lives in an op-amp sidechain rather than
 in the cell's own carriers, so borrowing this cell would have forced a
@@ -44,6 +56,29 @@ T4's timing, its panel law and its every time constant, and still
 implements the photoconductor's distortion term identically, so that term
 is a property of any photoresistor rather than of the T4. The crate holds
 both, and says which is which.
+
+**And the refuser is now a caller, which is what finally tested the general
+half.** The CL-1B does not reimplement that distortion term; it calls this
+crate's, with its own strength and reference amplitude, so the three
+optical compressors here run one law at three depths. Wiring the rest of it
+up found the one thing the general half was missing. The resistance law had
+the T4's two endpoints and the single conductance scale that ties them
+built into it, because in a T4 the lit resistance *is* the scale: `K_G` is
+`1/R_MIN − 1/R_DARK`, so full carriers land exactly on `R_MIN`. In the
+CL-1B they are two unrelated numbers. Its scale is solved from a
+service-manual calibration, 250 mV of side-chain drive for exactly 10 dB of
+reduction, while its minimum resistance is a separate estimate whose only
+job is to set a maximum reduction nobody publishes. `Photoresistor` holds
+the three separately and `Photoresistor::T4` is the case where two of them
+coincide. Two users sharing an actual T4B could never have shown that,
+because for them the question never arises; it took a third that shares the
+law and nothing else.
+
+The crate's own documentation names which unit supplied which half, and
+both cases are asserted in its tests, because three fields where two would
+apparently do is exactly what a later reader tidies away. The tie is real
+for the T4 and only for the T4, and the test that pins it is there so
+deleting the third field fails rather than passes.
 
 **Circuitry does not belong here.** A component is the part. The resistive
 divider it shunts, the sidechain that drives it and the make-up gain after
@@ -69,13 +104,28 @@ everything the old rule taught about shape:
 - **A component is a part, never a category.** "VCA" would have covered a log-antilog cell, an
   operational transconductance amplifier and a field-effect transistor, which share a word and not
   an equation. It is the Blackmer cell for that reason, and the same test applies to every crate
-  added from here.
+  added from here. Two of those three are now here under their own names, as
+  `blackmer-cell` and `fet-variable-resistor`, and their laws have nothing in common: a constant
+  number of decibels per volt against a saturating resistance modulated by its own drain-source
+  swing. One crate would have had to be both.
 - **The crate holds the part and nothing around it.** The resistors that bias it, the detector that
   drives it and the make-up gain after it are the machine, and they differ from unit to unit while
   the part does not.
 - **A shape derived from one implementation is usually wrong for the second.** Where two plug-in
   engines already contain the same part, reconcile both against the crate rather than lifting
   whichever was written first.
+
+  That has now happened once, to the Blackmer cell, and what it found is the
+  argument for doing it this way. The two engines agreed on the control law
+  exactly and disagreed about the shape of the even-order residual: one writes
+  it as a gain mismatch between the two half-wave paths, the other as a smooth
+  squared term. The crate, written with no real users at all, had picked the
+  squared term while its own prose described the mechanism that gives the
+  other. So the reconciliation changed the crate rather than either engine. It
+  now carries both shapes, names the mechanism each stands for, and sets out
+  which published figures pull which way — because the datasheet's own three
+  distortion rows do not settle it, and a crate built from either user alone
+  would have shipped a shape it had no right to.
 - **Record the evidence, and its asymmetry.** A part read off a manufacturer's drawing and a part
   inferred from behaviour are both admissible now, but they are not the same thing and the crate
   says which is which.
@@ -85,105 +135,38 @@ everything the old rule taught about shape:
 Named here so the boundary stays deliberate rather than accreting. None of
 these is built yet, and each waits for a second real user:
 
-- **Transformer.** Already exists in the 610 preamp of the compressor lab's
-  6176, and would be wanted by any variable-mu unit.
-- **Remote-cutoff triode.** The gain element of the variable-mu family, and
-  not the same thing as the 610's tube stage. This entry used to read "tube
-  stage and transformer" and to claim a variable-mu unit would want the
-  610's; that was wrong. The 610's triode model was fitted for 12AX7-class
-  valves, which have no remote-cutoff characteristic, so the two differ in
-  functional form and not merely in parameters. If this crate ever holds
-  both they are two components with two names, and this is the reason.
+- **Log-domain RMS detector — built**, as
+  `noob-electrical-components-log-rms-detector`. This was the last entry here
+  to be argued about at length, and the argument is worth keeping because what
+  settled it was the rule changing rather than any new evidence arriving.
 
-  **And when it is built, both tubes must be fitted by one documented
-  procedure.** Two researchers tried to settle whether the candidate tubes
-  share a shape, fitting transconductance to `exp(-(w/V0)^n)`, and the
-  useful result is that published data cannot answer it, and it is now
-  measured rather than inferred. One tube's maker plots it under four
-  operating conditions, and fitting all four gives exponents of 1.00, 0.84,
-  0.71 and 0.59, moving monotonically with the supply, every fit good to
-  under half a decibel. One tube, four conditions, a factor of 1.7. The
-  other tube's exponent moves from 2.16 to 1.71 depending on whether it is
-  anchored on interior or endpoint values of its own single curve. So the
-  exponent is condition-dependent and anchor-dependent, and two exponents
-  read off two datasheets by two methods are not comparable at all.
+  It waited on two independent grounds. The first was the admission rule as
+  written: two units *documented* to contain the part, meaning on a
+  manufacturer's drawing. The dbx 160 meets that. The API 2500 does not, and
+  its own dossier is why — no API schematic exists publicly and nothing below
+  block level comes from API, so the part identity is a reviewer's report. The
+  second ground would have applied even if the first were met: there was one
+  implementation of the detector in the plug-in, and an abstraction pulled from
+  a single implementation is usually the wrong shape for the second.
 
-  So the constraint is procedural rather than numerical. If this component
-  is built, every tube's parameters come from **one** fitting procedure
-  using the same class of anchor points, written down. Two people each
-  fitting their own tube their own way and comparing the results afterwards
-  would be agreeing on an artefact.
+  **Neither ground has gone away; the rule moved past them.** The crate
+  therefore exists on one drawing and one report, and it says so on its own
+  front page rather than letting the report look like corroboration. What the
+  reported second unit did contribute survives intact, and it is the boundary:
+  the dbx has no attack or release controls because its detector *is* its
+  ballistics, the API has fourteen because its panel ballistics are a second
+  stage after the detector, and the component holds neither.
 
-  **The constraint has three clauses and each was learned by getting it
-  wrong.** One documented fitting procedure, because the procedure moves the
-  answer. The same class of anchor points, because a fit to interior points
-  is not a fit to endpoints. And curves measured in the **same topology**,
-  because one tube's published plot is a cascode connection where the
-  section's plate floats at the next tube's cathode, the other's is a
-  single-section characteristic at a fixed plate voltage, and **neither is
-  the grounded-cathode stage either compressor actually runs**. Without all
-  three, two implementations agree on a number while disagreeing about the
-  curve, which is worse than not sharing at all, because it looks like
-  corroboration.
-
-  **Where it finally landed: the shape question is unanswerable from
-  published data, and no exponent quoted during the argument should be
-  reused.** The figures that circulated were 1.01, 1.10, 1.58, 1.71, 1.98
-  and 2.16, and each was someone's honest reading. The exponent moves by a
-  factor of 1.7 across four operating conditions on a single page for a
-  single tube; it moves from 2.16 to 1.71 for the other tube on a change of
-  anchor points within one curve; and it moves from 2.16 to 1.58 between two
-  manufacturers' curves for that same tube. Condition-dependent,
-  anchor-dependent, procedure-dependent and maker-dependent. It is not a
-  property of a tube, so it was never a quantity on which two tubes could be
-  compared.
-
-  **And this is now the sharpest argument for not building the part yet.**
-  The parameter set a shared component would ship with today has been shown
-  by its own author to be wrong in the deep end, six-fold off a published
-  plate-resistance curve by ten volts of bias, which is where a limiter
-  spends its loudest moments. Building now would cast that into a crate and
-  give it to every future user.
-
-  Two near-misses on the way there are worth keeping, because both looked
-  like evidence. Three datasheets agreeing on an amplification factor say
-  nothing about its bias dependence when all three quote one operating
-  point. And two average tapers agreeing say nothing about shape, because an
-  average slope is a first-moment statistic and is blind to the curvature an
-  exponent measures.
-- **FET.** The 1176's gain element, currently inside that engine.
-- **Log-domain RMS detector.** The true-RMS technique, and only the
-  technique. The dbx 160 dossier refused to extract it with one user and
-  named the condition for revisiting: a second true-RMS unit. The API 2500
-  is that unit, and it is better documented in one respect, since the dbx
-  contains a potted module with no published datasheet while the API is
-  reported to hold the part whose datasheet the dbx dossier already borrows.
-  So the condition is closer to met than it was.
-
-  **It still waits, for two independent reasons.** The first is the
-  admission rule as written: two units *documented* to contain the part,
-  meaning on a manufacturer's drawing. The dbx meets that. The API does not,
-  and its own dossier is why — it records that no API schematic exists
-  publicly and that nothing below block level comes from API, so the part
-  identity is a reviewer's report. That is the same evidence class as the
-  API's gain cell, which was accepted as a corroborating third user only
-  because two drawings had already fixed the shape. With one drawing, a
-  reported user cannot do that work.
-
-  The second reason would apply even if the first were met. There is one
-  implementation of this detector in the plug-in, and an abstraction pulled
-  from a single implementation is usually the wrong shape for the second,
-  which is this repository's founding argument. The remote-cutoff triode
-  gave a live demonstration: a component fixed from thin evidence would have
-  shipped a parameter set its own author later showed to be six-fold wrong
-  in the region that matters most.
-
-  Extract when a second true-RMS unit is both **documented and built**.
-
-  The boundary is already drawn by a refusal, which is the strongest kind.
-  The dbx has no attack or release controls because its detector *is* its
-  ballistics; the API has fourteen because its panel ballistics are a second
-  stage after the detector. The component must hold neither.
+**The transformer has been built**, and its entry here named the wrong second
+user. It read that the part "already exists in the 610 preamp of the
+compressor lab's 6176, and would be wanted by any variable-mu unit". The
+first half was right. The second was a guess, and the unit that actually
+turned out to share the part is the 1176 sitting next to the 610 in the same
+box, which nobody had named. That is the diode bridge's lesson from the other
+side: the bridge was admitted on a predicted second user who never arrived,
+and the transformer waited on a predicted second user while its real one was
+already in the building. A prediction about *which* unit shares a part is
+worth no more than a prediction *that* one will.
 
 Two entries have left this list, and the difference between how they left
 it is the most useful thing on this page.
@@ -213,9 +196,10 @@ expected to. The *about to be shared* clause cost nothing to write and has now
 been wrong once, and it was wrong in the most expensive way available: the
 prediction came from a survey, the survey was believed, and the crate was
 built before the second unit had been researched closely enough to notice it
-was a different circuit. The next candidate to face this is the remote-cutoff
-triode, which has the Fairchild 670 built and the Universal Audio 176 planned,
-and it will wait for the 176 to actually contain one.
+was a different circuit. The next candidate to face this was the remote-cutoff
+triode, and it never had to: the rule above changed first. It is built, with a
+parameter set per valve type, so a second unit fits its own valve against its
+own curves rather than inheriting one on a prediction.
 
 The cheap way to hold this line is to write the part in one separable place
 inside the first plug-in that needs it, and lift it out when the second

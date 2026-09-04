@@ -42,3 +42,27 @@ pub use noob_electrical_components_diode_bridge as diode_bridge;
 #[cfg(feature = "blackmer-cell")]
 #[cfg_attr(docsrs, doc(cfg(feature = "blackmer-cell")))]
 pub use noob_electrical_components_blackmer_cell as blackmer_cell;
+
+#[cfg(feature = "remote-cutoff-triode")]
+#[cfg_attr(docsrs, doc(cfg(feature = "remote-cutoff-triode")))]
+pub use noob_electrical_components_remote_cutoff_triode as remote_cutoff_triode;
+
+#[cfg(feature = "diode-arm-pair")]
+#[cfg_attr(docsrs, doc(cfg(feature = "diode-arm-pair")))]
+pub use noob_electrical_components_diode_arm_pair as diode_arm_pair;
+
+#[cfg(feature = "fet-variable-resistor")]
+#[cfg_attr(docsrs, doc(cfg(feature = "fet-variable-resistor")))]
+pub use noob_electrical_components_fet_variable_resistor as fet_variable_resistor;
+
+#[cfg(feature = "log-rms-detector")]
+#[cfg_attr(docsrs, doc(cfg(feature = "log-rms-detector")))]
+pub use noob_electrical_components_log_rms_detector as log_rms_detector;
+
+#[cfg(feature = "small-signal-triode")]
+#[cfg_attr(docsrs, doc(cfg(feature = "small-signal-triode")))]
+pub use noob_electrical_components_small_signal_triode as small_signal_triode;
+
+#[cfg(feature = "transformer")]
+#[cfg_attr(docsrs, doc(cfg(feature = "transformer")))]
+pub use noob_electrical_components_transformer as transformer;

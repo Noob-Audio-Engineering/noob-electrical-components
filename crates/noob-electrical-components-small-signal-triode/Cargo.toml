@@ -1,0 +1,14 @@
+[package]
+name = "noob-electrical-components-small-signal-triode"
+description = "A model of the small-signal triode gain stage a 12AX7-class valve makes: a fixed-shape saturating law whose bias sets the asymmetry and never the gain. Not the remote-cutoff valve of a variable-mu compressor, which is a different component"
+readme = "README.md"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+# Nothing here goes to crates.io until I say so.
+publish = false
+
+[dependencies]
