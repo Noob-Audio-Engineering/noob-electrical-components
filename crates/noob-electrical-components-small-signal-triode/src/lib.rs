@@ -44,6 +44,16 @@
 //! corrected there, and this paragraph is the correction restated where
 //! somebody reaching for the wrong crate would read it.
 //!
+//! **And it cannot be settled numerically instead**, by fitting one
+//! exponent to each valve and comparing them. The other crate's
+//! documentation records why: fitting a single valve's transconductance
+//! across the four operating conditions its own maker plots gives exponents
+//! of 1.00, 0.84, 0.71 and 0.59, every fit good to under half a decibel.
+//! One valve, one page, a factor of 1.7. An exponent read off a datasheet
+//! is not a property of a valve, so it was never a quantity two valves
+//! could be compared on, and the case for two components has to rest on the
+//! functional form. It does, and the paragraphs above are that case.
+//!
 //! # The law
 //!
 //! The saturating shape is Yeh, Abel and Smith's tanh-like family,

@@ -18,6 +18,17 @@
 //! parameters**. That is why this is its own component rather than a
 //! parameter set of somebody else's.
 //!
+//! One of those preamplifier models is in this workspace, as
+//! `noob-electrical-components-small-signal-triode` behind the
+//! `small-signal-triode` feature, and the two crates state the boundary from
+//! their own sides. Its law is a fixed-shape curve whose small-signal gain
+//! is the same at every bias, so there is no bias at which it is twenty
+//! decibels down and a control voltage applied to it would have nothing to
+//! do. This one's whole purpose is that its gain *is* its bias, and
+//! `transconductance_falls_monotonically_over_the_published_interval` asserts
+//! the complement of that crate's assertion. Neither can serve the other, and
+//! the pair of tests is what says so.
+//!
 //! # The law
 //!
 //! ```text

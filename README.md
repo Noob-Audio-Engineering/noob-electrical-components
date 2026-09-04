@@ -130,10 +130,14 @@ everything the old rule taught about shape:
   inferred from behaviour are both admissible now, but they are not the same thing and the crate
   says which is which.
 
-## Coming candidates
+## Candidates, and what became of them
 
-Named here so the boundary stays deliberate rather than accreting. None of
-these is built yet, and each waits for a second real user:
+Named here so the boundary stays deliberate rather than accreting. **This
+list is now a history rather than a queue**: on 2026-09-04 every component
+the plug-in modelled was moved here, so nothing on it is waiting any more.
+The entries are kept because how each one arrived is worth more than the
+fact that it did, and because two of them were argued about at length on
+grounds that turned out to be wrong.
 
 - **Log-domain RMS detector — built**, as
   `noob-electrical-components-log-rms-detector`. This was the last entry here
@@ -168,8 +172,9 @@ and the transformer waited on a predicted second user while its real one was
 already in the building. A prediction about *which* unit shares a part is
 worth no more than a prediction *that* one will.
 
-Two entries have left this list, and the difference between how they left
-it is the most useful thing on this page.
+**Everything has now left this list**, and the differences between how they
+left are the most useful thing on this page. Two are worth reading before
+adding anything new.
 
 **The diode bridge** was admitted on the second half of the rule, *about to*
 be shared rather than already shared, on the expectation that the EMI TG12413

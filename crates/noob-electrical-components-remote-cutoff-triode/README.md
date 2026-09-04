@@ -15,6 +15,14 @@ no remote-cutoff characteristic. The difference is in the functional form,
 not the parameters, which is why this is its own component and not a
 parameter set of somebody else's.
 
+One of those models is next door, as
+`noob-electrical-components-small-signal-triode`. Its law is a fixed-shape
+curve whose small-signal gain is the same at every bias, so there is no bias
+at which it is twenty decibels down and a control voltage applied to it
+would have nothing to do. This valve's gain *is* its bias. Each crate
+asserts its own half of that in a test, so the two cannot be quietly merged
+by a later reader without one of the tests failing.
+
 ```toml
 [dependencies]
 noob-electrical-components = { git = "https://github.com/Noob-Audio-Engineering/noob-electrical-components", features = ["remote-cutoff-triode"] }

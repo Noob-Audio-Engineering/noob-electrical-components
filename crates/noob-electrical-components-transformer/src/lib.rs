@@ -260,6 +260,39 @@ impl Core {
     /// further is excess.
     #[inline]
     pub fn excess(&self, flux: f32) -> f32 {
+        // `x / (1 + |x|^n)^(1/n)` is written out here deliberately, and it
+        // is character for character the `s_curve` of
+        // `noob-electrical-components-small-signal-triode`. **That
+        // duplication is the decision, not an oversight. Do not factor the
+        // two into a shared helper, and do not have either crate call the
+        // other's.**
+        //
+        // Three reasons, and the first is the one that matters.
+        //
+        // These are two parts and not one. A core's B-H knee and a triode's
+        // grid curve have no mechanism in common; they landed on the same
+        // algebraic family because it is a convenient bounded odd shape and
+        // two people reached for it, which is a fact about the modelling and
+        // not about the hardware. Sharing the expression would assert a
+        // relationship between a wound core and a valve that does not exist,
+        // and the crate that came out of it would be describing nothing.
+        //
+        // They are free to move apart, and one of them should. Refit this
+        // knee against a real B-H curve — minor loops, remanence, a gapped
+        // core — and it stops being this family at all, which is a change a
+        // transformer is entitled to make without breaking a valve. A shared
+        // helper turns that into a negotiation between two components.
+        //
+        // And the shape of the sharing would be wrong either way. Calling
+        // the triode crate would make a transformer depend on a valve;
+        // hoisting it into a third crate would make that crate a bounded
+        // saturating function with no physical part behind it, which is
+        // general signal processing, and the repository README says plainly
+        // that general signal processing does not belong here.
+        //
+        // The exponents are not the same quantity either. Here it is fixed
+        // at `KNEE` and describes a core; there it is a per-voicing
+        // parameter of a valve. Two numbers that happen to be spelled `n`.
         let sat = self.flux_limit;
         let x = flux / sat;
         let a = x.abs().powf(Self::KNEE);

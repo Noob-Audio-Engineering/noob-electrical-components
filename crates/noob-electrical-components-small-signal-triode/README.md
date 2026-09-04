@@ -22,9 +22,16 @@ asymmetry of the curve and nothing else. There is no bias at which this stage
 is 20 dB down, so a control voltage applied to it would have nothing to do.
 
 That is a difference of functional form rather than of parameters, so no
-refit closes it. A test here measures it: four decades of bias move the
-small-signal gain by under 0.05 dB, where a remote-cutoff valve's whole
+refit closes it. A test here measures it: the whole bias range moves the
+small-signal gain by under 0.01 dB, where a remote-cutoff valve's whole
 range is bias-controlled gain.
+
+Nor can it be settled numerically, by fitting an exponent to each valve and
+comparing. The other crate records why: fitting one valve's transconductance
+across the four operating conditions its own maker plots gives 1.00, 0.84,
+0.71 and 0.59, every fit good to under half a decibel. One valve, one page,
+a factor of 1.7. An exponent read off a datasheet is not a property of a
+valve, so it was never a quantity two valves could be compared on.
 
 The workspace README used to claim that a variable-mu unit would want the
 610's tube stage. It was wrong, it has been corrected there, and this is the

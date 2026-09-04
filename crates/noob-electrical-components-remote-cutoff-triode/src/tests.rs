@@ -180,6 +180,16 @@ fn the_refit_costs_two_orders_of_magnitude_less_against_ges_own_curve() {
 /// this a remote-cutoff valve at all: the transconductance falls
 /// **monotonically** across the published interval, and by more than a decade
 /// over it. An ordinary triode would have cut off entirely inside it.
+///
+/// **This is also the assertion that keeps this crate and
+/// `noob-electrical-components-small-signal-triode` from being quietly
+/// merged.** That crate's law normalises by the slope at the bias point, so
+/// its small-signal gain is the same at every bias and its own test asserts
+/// the gain moves by under 0.01 dB across the whole range. This one asserts
+/// the complement, that the gain moves by more than twenty decibels over an
+/// interval the manufacturer publishes both ends of. A single component
+/// cannot satisfy both, and a later reader who tries to combine them will
+/// fail one of the two tests rather than discover the problem in the audio.
 #[test]
 fn transconductance_falls_monotonically_over_the_published_interval() {
     let t = RemoteCutoffTriode::ge_6386();
