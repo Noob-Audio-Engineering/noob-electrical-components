@@ -175,6 +175,23 @@ impl CellParams {
         }
     }
 
+    /// Set the carrier generation at full light, which is how hard a
+    /// machine's driver lights the panel.
+    ///
+    /// A setter rather than a public field assignment because
+    /// [`CellParams`] is `#[non_exhaustive]`, which blocks a caller in
+    /// another crate from using struct-update syntax. That is the cost of
+    /// the attribute: a configurable field needs a method.
+    pub fn with_generation(self, k_gen: f32) -> CellParams {
+        CellParams { k_gen, ..self }
+    }
+
+    /// Set the panel's smoothing time constant, in seconds: the phosphor
+    /// plus whatever the driver's output impedance does to it.
+    pub fn with_panel_smoothing(self, tau_u: f32) -> CellParams {
+        CellParams { tau_u, ..self }
+    }
+
     /// Add the T4A's third photocell: a faster population carrying
     /// `share` of the conductance in parallel with the main one.
     pub fn with_fast_cell(self, share: f32, speed: f32) -> CellParams {
