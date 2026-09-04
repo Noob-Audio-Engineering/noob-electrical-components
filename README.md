@@ -137,13 +137,25 @@ these is built yet, and each waits for a second real user:
   reported to hold the part whose datasheet the dbx dossier already borrows.
   So the condition is closer to met than it was.
 
-  **It still waits, and for a reason worth stating**, because it is not the
-  one that stopped the diode bridge. The API 2500 is not being built. There
-  is exactly one implementation of this detector in the plug-in, and an
-  abstraction pulled out of a single implementation is usually the wrong
-  shape for the second, which is this repository's founding argument.
-  Extract it when a second true-RMS unit is **built**, not when a second
-  one is known to exist.
+  **It still waits, for two independent reasons.** The first is the
+  admission rule as written: two units *documented* to contain the part,
+  meaning on a manufacturer's drawing. The dbx meets that. The API does not,
+  and its own dossier is why — it records that no API schematic exists
+  publicly and that nothing below block level comes from API, so the part
+  identity is a reviewer's report. That is the same evidence class as the
+  API's gain cell, which was accepted as a corroborating third user only
+  because two drawings had already fixed the shape. With one drawing, a
+  reported user cannot do that work.
+
+  The second reason would apply even if the first were met. There is one
+  implementation of this detector in the plug-in, and an abstraction pulled
+  from a single implementation is usually the wrong shape for the second,
+  which is this repository's founding argument. The remote-cutoff triode
+  gave a live demonstration: a component fixed from thin evidence would have
+  shipped a parameter set its own author later showed to be six-fold wrong
+  in the region that matters most.
+
+  Extract when a second true-RMS unit is both **documented and built**.
 
   The boundary is already drawn by a refusal, which is the strongest kind.
   The dbx has no attack or release controls because its detector *is* its
