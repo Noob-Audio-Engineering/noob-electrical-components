@@ -41,16 +41,21 @@
 
 #![forbid(unsafe_code)]
 
-/// Flush a denormal to zero.
+/// Flush a state to zero once it decays below audibility.
 ///
 /// The cell's states decay exponentially towards zero and can sit in the
 /// subnormal range for a long time after a signal stops, where arithmetic
-/// is slow on some hardware. The compressor lab found one of its envelope
-/// followers parked on a subnormal permanently after eleven seconds of
-/// silence, so this is not theoretical.
+/// is slow on some hardware. It is not theoretical: an equaliser built on
+/// the same foundations had an envelope follower parked on a subnormal
+/// permanently after eleven seconds of silence.
+///
+/// The threshold is the same 1e-9 the plug-ins using this crate settled
+/// on, so a decaying tail parks at the same point wherever it is computed.
+/// It is around 180 dB below anything audible and far above the subnormal
+/// range, which begins near 1e-38, so it costs no signal.
 #[inline]
 fn flush(x: f32) -> f32 {
-    if x.abs() < 1e-12 { 0.0 } else { x }
+    if x.abs() < 1e-9 { 0.0 } else { x }
 }
 
 /// Photocell resistance in the dark (ohms).
