@@ -90,11 +90,27 @@ pub const K_G: f32 = 1.0 / R_MIN - 1.0 / R_DARK;
 
 /// Time constants of the photocell, in seconds, for one cell variant.
 ///
-/// Non-exhaustive: fields have been added here once already, when the
-/// oldest cell's third photocell arrived, and adding another should not
-/// break a caller.
+/// # Build one from a constant, not from scratch
+///
+/// Start from [`CellParams::GRAY`] and change what differs:
+///
+/// ```
+/// # use noob_electrical_components_photocell::CellParams;
+/// let hotter = CellParams { k_gen: 12.0, ..CellParams::GRAY };
+/// ```
+///
+/// That is the supported way, and it is what makes adding a field here a
+/// non-breaking change: a functional update fills anything new from the
+/// base. Fields have been added once already, when the oldest cell's third
+/// photocell arrived, and every caller using this pattern was unaffected.
+///
+/// This struct is deliberately **not** `#[non_exhaustive]`. That attribute
+/// exists to give the same guarantee, but it forbids functional update
+/// syntax from another crate, so it removes the mechanism that already
+/// provides the guarantee and charges a setter per field for the
+/// privilege. It was tried here and taken back off; please do not reach
+/// for it again.
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[non_exhaustive]
 pub struct CellParams {
     /// Open-loop attack time constant in dim light. The loop closes faster
     /// than this (about 10 to 15 ms for a moderate hit), which is what the
@@ -173,23 +189,6 @@ impl CellParams {
             capture: self.capture / k,
             ..self
         }
-    }
-
-    /// Set the carrier generation at full light, which is how hard a
-    /// machine's driver lights the panel.
-    ///
-    /// A setter rather than a public field assignment because
-    /// [`CellParams`] is `#[non_exhaustive]`, which blocks a caller in
-    /// another crate from using struct-update syntax. That is the cost of
-    /// the attribute: a configurable field needs a method.
-    pub fn with_generation(self, k_gen: f32) -> CellParams {
-        CellParams { k_gen, ..self }
-    }
-
-    /// Set the panel's smoothing time constant, in seconds: the phosphor
-    /// plus whatever the driver's output impedance does to it.
-    pub fn with_panel_smoothing(self, tau_u: f32) -> CellParams {
-        CellParams { tau_u, ..self }
     }
 
     /// Add the T4A's third photocell: a faster population carrying
@@ -484,6 +483,27 @@ impl Cell {
     }
 
     /// The conductance the divider sees, 0..1.
+    ///
+    /// # Do not judge a recovery by this number
+    ///
+    /// The cell is a shunt in a divider and a listener hears decibels, so
+    /// linear conductance badly overstates how far a recovery has got. At
+    /// half a second after a hard hit this reads 98.7 % recovered while
+    /// 4.8 dB of the original 35.2 is still being held, and at three
+    /// seconds it reads 98.9 % with 4.3 dB still held. Anyone comparing
+    /// cells, or deciding that a tail has finished, must convert through
+    /// the divider first.
+    ///
+    /// This is not hypothetical. Two people in succession concluded from
+    /// the linear figure that the differences between cells past half a
+    /// second were rounding, and both were wrong. Converted to decibels the
+    /// differences are real, and the ordering actually **reverses**: the
+    /// oldest cell leads late rather than trailing, because once its third
+    /// photocell has recovered it returns its whole share of the parallel
+    /// conductance. So the claim that the slow photocell dominates the tail
+    /// is *not* assertable on a bare cell, and this crate does not assert
+    /// it. A compressor can, where its own divider and a loaded trap
+    /// population change the balance, and the LA-2A does.
     ///
     /// With only the main photocell this is exactly `n_f`, returned
     /// untouched so the Gray and Silver positions are bit-for-bit what
