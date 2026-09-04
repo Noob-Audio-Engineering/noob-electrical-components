@@ -127,16 +127,30 @@ pub const EL_B: f32 = 5.0;
 /// point on the curve and the ends are fixed by [`R_DARK`] and [`R_MIN`]:
 /// across the LA-2A's published rows it survives as about 0.01 dB.
 ///
-/// **Timing, which calibration does not absorb.** Attack runs on
-/// `tau_f0 / (1 + light / l_a)`, so it is set by *light*, while calibration
-/// pins *carriers*. Those are the two sides of the exponent, so a change in
-/// γ moves one and not the other: at the LA-2A's 1 dB onset the light is
-/// 5.76e-6 at 0.7 against 2.60e-5 at 0.8, four and a half times less, and
-/// the attack slows by 1.7 % because less light means less of the
-/// light-dependent speed-up. It stays well inside the published 5 to 60 ms
-/// either way. Anyone changing this constant should expect the timing rows
-/// to move even though the level rows do not, and should not read that as a
-/// calibration fault.
+/// **Timing, which calibration does not absorb.** A compressor calibrates by
+/// solving for the drive that reaches a chosen gain reduction, and gain
+/// reduction is a function of the attenuator law, which takes *carriers*.
+/// So calibration pins carriers. Attack runs on `tau_f0 / (1 + light / l_a)`,
+/// which takes *light*. γ is the exponent between those two, so moving it
+/// necessarily moves one side and leaves the other fixed, and no calibration
+/// of that shape can absorb the difference. At the LA-2A's 1 dB onset the
+/// light is 5.76e-6 at 0.7 against 2.60e-5 at 0.8, four and a half times
+/// less, so there is less of the light-dependent speed-up and the attack
+/// slows by 1.7 %.
+///
+/// This is the answer to anyone who finds that a change described as free
+/// moved a timing figure. Expect the timing rows to move while the level
+/// rows do not, and do not read it as a calibration fault.
+///
+/// Worth recording, though it is not evidence: that 1.7 % runs from 9.833 ms
+/// at 0.8 to 10.000 ms at 0.7, and the specifications quote about 10 ms. The
+/// sourced exponent lands marginally closer to the published behaviour than
+/// the undocumented one did. It is a small point in 0.7's favour beyond
+/// traceability, and no more than that: the benchmark's window is the 5 to
+/// 60 ms the measurements support, both values sit comfortably inside it,
+/// and a 0.167 ms difference is far too fine to choose an exponent by. It is
+/// noted so the next reader knows it was seen and weighed rather than
+/// missed.
 pub const CELL_GAMMA: f32 = 0.7;
 /// Photocell conductance for full light, so `n_f = 1` gives `R_MIN`.
 pub const K_G: f32 = 1.0 / R_MIN - 1.0 / R_DARK;
