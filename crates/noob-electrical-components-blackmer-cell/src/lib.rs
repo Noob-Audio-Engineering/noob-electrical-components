@@ -51,7 +51,15 @@
 //! - the **SSL 4000 G bus compressor**, whose card 82E26 has `DBX 202C`
 //!   lettered on it by SSL, at both the audio and the sidechain positions.
 //!
-//! A third unit, the Distressor, is usually described as using a
+//! A third unit joins them on weaker evidence: the **API 2500**, whose
+//! cell is reported to be a THAT 2180, the monolithic descendant of the
+//! same design. That comes from a reviewer identifying chips in 2001
+//! rather than from a manufacturer's drawing, so it corroborates the part
+//! without being allowed to shape it. It needs nothing this crate does not
+//! already hold, which is itself a small piece of evidence that the
+//! boundary is in the right place.
+//!
+//! A fourth unit, the Distressor, is usually described as using a
 //! Blackmer-style cell, but that is an inference from how it behaves
 //! rather than a part read off a drawing, and the model of it in the lab
 //! stands a single distortion constant in for the entire cell. It is free

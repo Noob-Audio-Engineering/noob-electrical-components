@@ -66,7 +66,14 @@ photocell met rather than the weaker one the diode bridge met:
 - the **SSL 4000 G bus compressor**, whose card 82E26 has `DBX 202C` lettered
   on it by SSL, at both the audio and the sidechain positions.
 
-A third unit, the **Distressor**, is usually described as using a
+A third unit joins them on weaker evidence. The **API 2500**'s cell is
+reported to be a THAT 2180, the monolithic descendant of the same design,
+but that comes from a reviewer identifying chips in 2001 rather than from a
+manufacturer's drawing. It corroborates the part without being allowed to
+shape it, and it needed nothing this crate does not already hold, which is a
+small piece of evidence that the boundary is drawn in the right place.
+
+A fourth unit, the **Distressor**, is usually described as using a
 Blackmer-style cell, but that is an inference from how it behaves rather than a
 part read off a drawing, and the model of it in the plug-in stands one
 distortion constant in for the whole cell. It is free to consume this crate. It
