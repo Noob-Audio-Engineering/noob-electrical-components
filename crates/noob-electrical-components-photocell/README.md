@@ -25,8 +25,30 @@ description, the magnitudes are estimates, and the one difference with a
 physical basis is the third, faster photocell the earliest cells carried,
 which no speed multiplier can express because the point is a shape.
 
-This crate is the cell alone. The divider it shunts, the sidechain that
-drives it and the make-up gain after it belong to the machine using it.
+This crate is the element and the cell alone. The divider it shunts, the
+sidechain that drives it and the make-up gain after it belong to the
+machine using it.
+
+## Two named simplifications, and one operating limit
+
+The photoconductive exponent is fixed. A real cell's is not: the datasheet
+figure is defined only between 10 and 100 lux, published values span 0.6 to
+0.9, and the physical literature uses a dual-slope power law rather than a
+single exponent. No source gives the endpoints a light-dependent exponent
+would need, so it stays fixed and is documented rather than invented.
+
+The electroluminescent law is an alternating-current one whose brightness
+also rises with drive frequency, and this drives it from a rectified,
+smoothed envelope, which discards that. A real panel is brighter for
+high-frequency-dense programme at the same level. A compressor built on
+this may still react more to highs through a sidechain emphasis filter, but
+that is a different mechanism and should not be mistaken for this one.
+
+Together those put a hard corner where a real cell has a gradual one: above
+about 4.2 V of drive, generation is pinned at the state's clamp and neither
+law contributes further, so 5 V and 50 V are identical. Keep a sidechain
+inside that range. The limit is asserted, along with the fact that the
+model stays responsive above it.
 
 ```toml
 [dependencies]

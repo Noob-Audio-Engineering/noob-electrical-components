@@ -9,6 +9,9 @@ members = [
 version = "0.1.0"
 authors = ["Ely Erin Fox"]
 edition = "2024"
+# Pinned so a caller knows what it needs; 2024 requires 1.85 at minimum and
+# `let`-chains in the plug-ins using this need 1.88.
+rust-version = "1.88"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/Noob-Audio-Engineering/noob-electrical-components"
 homepage = "https://github.com/Noob-Audio-Engineering/noob-electrical-components"

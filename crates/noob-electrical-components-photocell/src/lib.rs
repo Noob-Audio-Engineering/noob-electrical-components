@@ -40,6 +40,7 @@
 //! photocell the earliest cells carried.
 
 #![forbid(unsafe_code)]
+#![warn(missing_docs)]
 
 /// Flush a state to zero once it has decayed far enough that arithmetic on
 /// it is a cost rather than a signal.
@@ -54,7 +55,9 @@
 /// is the smaller of the two values that were in circulation, and smaller
 /// is the conservative direction for a guard: subnormals begin near 1e-38,
 /// so 1e-12 prevents the stall by twenty-six orders of magnitude while
-/// touching a thousand times fewer real values than 1e-9 would. That
+/// touching a thousand times fewer real values than 1e-9 would. It is
+/// around 240 dB below full scale, which is the honest way to put it: a
+/// state is not a signal and has no loudness of its own. That
 /// matters here in particular, because the trapped-carrier state is the
 /// mechanism behind an optical compressor's memory and decays over
 /// seconds, so clamping it early is exactly the wrong economy.
@@ -65,8 +68,16 @@ fn flush(x: f32) -> f32 {
 
 /// Photocell resistance in the dark (ohms).
 pub const R_DARK: f32 = 2.0e6;
-/// Photocell resistance under full light (ohms); with `R_DARK` this gives
-/// about 38 dB of range.
+/// Photocell resistance under full light (ohms).
+///
+/// With [`R_DARK`] this is a resistance ratio of 4000, which is 72.0 dB.
+/// That is the part's own range and it is not what any compressor gets:
+/// the cell is a shunt in a divider, and how much of 72 dB reaches the
+/// audio depends on the resistances around it. Through the LA-2A's, a
+/// 70.7 kΩ series resistor and the 100 kΩ Gain pot in parallel with the
+/// cell, it works out at 38.3 dB. Both figures are asserted in the tests,
+/// because the smaller one used to be stated here as the cell's own range
+/// without a derivation and it is not.
 pub const R_MIN: f32 = 500.0;
 
 /// Electroluminescent light law exponent (`L = exp(−b / √(u / V_ref))`).
@@ -78,7 +89,12 @@ pub const CELL_GAMMA: f32 = 0.8;
 pub const K_G: f32 = 1.0 / R_MIN - 1.0 / R_DARK;
 
 /// Time constants of the photocell, in seconds, for one cell variant.
+///
+/// Non-exhaustive: fields have been added here once already, when the
+/// oldest cell's third photocell arrived, and adding another should not
+/// break a caller.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
 pub struct CellParams {
     /// Open-loop attack time constant in dim light. The loop closes faster
     /// than this (about 10 to 15 ms for a moderate hit), which is what the
@@ -177,6 +193,9 @@ impl CellParams {
 /// as the one source that examined the modules says it is; the speed sits
 /// inside the range Clairex quote for the material.
 pub const LA2_FAST_SHARE: f32 = 0.22;
+/// How much faster that third photocell is than the main pair, as a
+/// divisor on its time constants. **Estimate**; see
+/// [`CellParams::fast_speed`].
 pub const LA2_FAST_SPEED: f32 = 8.0;
 
 /// Cell parameters for a variant index: the speed multiplier, plus the
@@ -189,12 +208,47 @@ pub const LA2_FAST_SPEED: f32 = 8.0;
 /// cell, is a 1969-onward unit whose own control is about a cell's *age*
 /// rather than its era, so it does not get one either and calls the
 /// parameters it already builds.
-pub fn cell_params_for(cell: usize) -> CellParams {
-    let base = CellParams::GRAY.scaled(CELL_SPEEDS[cell.min(2)]);
-    if cell.min(2) == 2 {
+pub fn cell_params_for(cell: T4Variant) -> CellParams {
+    let base = CellParams::GRAY.scaled(CELL_SPEEDS[cell as usize]);
+    if cell == T4Variant::La2 {
         base.with_fast_cell(LA2_FAST_SHARE, LA2_FAST_SPEED)
     } else {
         base
+    }
+}
+
+/// Which T4 a unit is fitted with.
+///
+/// This used to be a `usize` clamped with `min(2)`, so a wrong index gave
+/// the wrong cell silently instead of failing. The discriminants match the
+/// old indices and [`CELL_SPEEDS`], so a stored parameter still maps the
+/// same way, but the conversion is now [`T4Variant::from_index`] and
+/// visible at the one boundary where a raw index genuinely arrives.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum T4Variant {
+    /// A late-1960s T4B, the fastest of the three.
+    Silver = 0,
+    /// The reference cell, and the default.
+    #[default]
+    Gray = 1,
+    /// The T4A of the LA-2 and early LA-2A: the slowest, and the only one
+    /// with the third, faster photocell.
+    La2 = 2,
+}
+
+impl T4Variant {
+    /// The variant a stored parameter index names.
+    ///
+    /// Anything past the last variant saturates at it, which is what the
+    /// old `min(2)` did. That is a deliberate choice for a host handing
+    /// back a value from a newer version of a plug-in, and it is stated
+    /// here rather than buried in an expression.
+    pub fn from_index(i: usize) -> Self {
+        match i {
+            0 => Self::Silver,
+            1 => Self::Gray,
+            _ => Self::La2,
+        }
     }
 }
 
@@ -269,6 +323,7 @@ pub struct Cell {
 }
 
 impl Cell {
+    /// A cell at rest: dark, no carriers, no traps filled.
     pub fn new(params: CellParams, sr: f32) -> Self {
         let mut c = Cell {
             u: 0.0,
@@ -284,11 +339,14 @@ impl Cell {
         c
     }
 
+    /// Retune for a new sample rate, keeping the current state.
     pub fn set_sample_rate(&mut self, sr: f32) {
         self.dt = 1.0 / sr;
         self.a_u = 1.0 - (-self.dt / self.params.tau_u.max(1e-6)).exp();
     }
 
+    /// Swap the cell's parameters, retuning the panel's smoothing only if
+    /// its time constant actually changed.
     pub fn set_params(&mut self, params: CellParams) {
         let retune = params.tau_u != self.params.tau_u;
         self.params = params;
@@ -298,6 +356,7 @@ impl Cell {
         }
     }
 
+    /// Return to darkness: every state to exactly zero.
     pub fn reset(&mut self) {
         self.u = 0.0;
         self.light = 0.0;
@@ -308,6 +367,20 @@ impl Cell {
 
     /// The Alfrey-Taylor electroluminescent law: zero slope near zero (a
     /// soft threshold) and saturating at high drive.
+    ///
+    /// # A second simplification, also named
+    ///
+    /// Alfrey-Taylor is an **alternating-current** law, and a real panel's
+    /// brightness rises with the drive's frequency as well as its
+    /// amplitude. This takes a rectified, smoothed envelope, which throws
+    /// that away. In an LA-2A the panel sees the sidechain audio itself, so
+    /// the same level of high-frequency-dense programme lights it brighter,
+    /// and this structure cannot produce that.
+    ///
+    /// Note for anyone reading a compressor built on this: a model may
+    /// still react more to highs, through a sidechain emphasis filter ahead
+    /// of the cell. That is a different mechanism with a different
+    /// signature, and it is not this one.
     #[inline]
     pub fn light_for(u: f32) -> f32 {
         if u <= 1e-6 {
@@ -319,6 +392,23 @@ impl Cell {
 
     /// Steady-state free carriers for a given light (what the cell settles
     /// to under constant illumination).
+    ///
+    /// # A fixed exponent is a simplification, and it is named here
+    ///
+    /// Conductance goes as `light^γ` with γ fixed at [`CELL_GAMMA`]. A real
+    /// cadmium-sulphide cell does not have one exponent: the datasheet
+    /// figure is "a straight line on log-log paper" defined only **between
+    /// 10 and 100 lux**, published values across common cells span 0.6 to
+    /// 0.9, and the physical models in the literature use a *dual-slope*
+    /// power law, a sum of two terms with different exponents, rather than
+    /// one. So the single exponent is a simplification of a curve, and it
+    /// is what puts the hard corner documented on [`Cell::step`] where a
+    /// real cell has a gradual one.
+    ///
+    /// It stays fixed because no source gives the two endpoints a
+    /// light-dependent exponent would need. Inventing them would move the
+    /// behaviour of two shipped compressors on numbers nobody published,
+    /// which is worse than a documented simplification.
     #[inline]
     pub fn carriers_for(light: f32, params: &CellParams) -> f32 {
         if light <= 0.0 {
@@ -330,6 +420,24 @@ impl Cell {
 
     /// Advance one sample with the instantaneous sidechain voltage `v`
     /// (signed; rectified here).
+    ///
+    /// # Usable drive range
+    ///
+    /// The model is faithful up to roughly **4.2 V** of smoothed drive and
+    /// saturates hard above it. [`carriers_for`](Self::carriers_for)
+    /// returns `k_gen · light^γ`, which reaches 1.0 at a light of 0.0878,
+    /// and the free-carrier state is clamped to 0..1. So past that point
+    /// generation is pinned at the clamp, and neither the panel's law nor
+    /// the photoconductor's contributes anything further: 5 V and 50 V of
+    /// drive give bit-identical output. The attack also changes character
+    /// across that line, from about 39 ms at 1 V to 8.3 ms at 6 V, so the
+    /// roughly 10 ms the specifications quote is only produced above it.
+    ///
+    /// This is a real limit of the model rather than of the part, and a
+    /// caller should keep its sidechain inside it. It is recorded rather
+    /// than removed because removing it means choosing a light-dependent
+    /// exponent, and no source gives one; see the note on the fixed
+    /// exponent in [`carriers_for`](Self::carriers_for).
     #[inline]
     pub fn step(&mut self, v: f32) {
         let p = self.params;
@@ -391,6 +499,17 @@ pub fn resistance_for(n_f: f32) -> f32 {
 #[cfg(test)]
 mod tests;
 
+/// Largest `k · (1 - attenuation)` for which [`distortion`] stays
+/// monotonic.
+///
+/// The term is `v - kc·v³/(v0² + v²)`, whose derivative in `q = v/v0` is
+/// `1 - kc·q²(3 + q²)/(1 + q²)²`. That numerator loses positivity exactly
+/// at `kc = 8/9`: measured, the minimum derivative is `+0.000000` at 8/9,
+/// `-0.000125` at 0.889 and `-0.125` at 1.0, where the curve folds back on
+/// itself. Above `kc = 1` the output changes sign at large input, which is
+/// not distortion but inversion.
+pub const MAX_DISTORTION_K: f32 = 8.0 / 9.0;
+
 /// The photoconductor's own distortion: an odd-order term that grows with
 /// how hard the cell is working.
 ///
@@ -411,10 +530,50 @@ mod tests;
 /// caller's: two of those compressors distort the audio node and then take
 /// the sidechain from it, so their detectors hear the distortion, while a
 /// third takes its detector from a different node entirely.
+///
+/// # Constraint
+///
+/// `k · (1 - attenuation)` must not exceed [`MAX_DISTORTION_K`], or the
+/// curve folds back on itself and stops being a distortion at all. Since
+/// attenuation reaches zero when a cell works hardest, the effective
+/// figure is `k` itself, so **`k` must be at most 8/9**. Debug builds
+/// assert it. The three optical compressors using this pass 0.6, 0.2 and
+/// 0.1, so all have margin, but the largest is within a factor of 1.5 of
+/// the limit and the constraint was previously unstated.
+///
+/// This is not a saturator: as the input grows the term approaches a
+/// constant and the output tends to a linear gain of `1 - kc`, so it bends
+/// the curve rather than bounding it. A caller that needs a ceiling needs
+/// one of its own.
 #[inline]
 pub fn distortion(v: f32, attenuation: f32, k: f32, v0: f32) -> f32 {
     let kc = k * (1.0 - attenuation);
+    debug_assert!(
+        kc <= MAX_DISTORTION_K,
+        "distortion k·(1-a) = {kc} exceeds {MAX_DISTORTION_K}, where the curve folds"
+    );
     let q = v / v0;
     let q2 = q * q;
     v * (1.0 - kc * q2 / (1.0 + q2))
+}
+
+/// The antiderivative of [`distortion`] with respect to `v`.
+///
+/// Antiderivative anti-aliasing needs the integral of the nonlinearity it
+/// is smoothing, and a caller cannot write one without duplicating the law
+/// above, which is exactly the drift this crate exists to prevent. The
+/// machinery that uses this belongs to whoever is doing the processing;
+/// the integral of the part's own curve belongs to the part.
+///
+/// Since `distortion` is `v - kc·v³/(v0² + v²)`, integrating term by term
+/// gives `v²/2 - (kc/2)·(v² - v0²·ln(v0² + v²))`. Checked against
+/// numerical differentiation of this function across `kc` from 0 to 8/9,
+/// two values of `v0` and `v` from −8 to 8: the largest disagreement is
+/// 4e-9, which is the finite-difference floor rather than the formula.
+#[inline]
+pub fn distortion_antiderivative(v: f32, attenuation: f32, k: f32, v0: f32) -> f32 {
+    let kc = k * (1.0 - attenuation);
+    let v2 = v * v;
+    let v02 = v0 * v0;
+    0.5 * v2 - 0.5 * kc * (v2 - v02 * (v02 + v2).ln())
 }
