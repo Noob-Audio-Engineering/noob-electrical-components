@@ -71,6 +71,22 @@ these is built yet, and each waits for a second real user:
   valves, which have no remote-cutoff characteristic, so the two differ in
   functional form and not merely in parameters. If this crate ever holds
   both they are two components with two names, and this is the reason.
+
+  **And when it is built, it must not assume the family has one shape.**
+  Both candidate tubes were fitted to the same law, a transconductance
+  decaying as `exp(-(w/V0)^n)`, and their exponents were measured from the
+  manufacturers' own published curves rather than assumed. The Fairchild's
+  true remote-cutoff tube comes out at 1.01, give or take 0.16, which is a
+  clean exponential; the 176's semi-remote-cutoff tube comes out at 2.16,
+  which accelerates. Forcing the second figure onto the first costs an order
+  of magnitude in fit residual, and measuring both over the same span widens
+  the gap rather than closing it. So `n` is a per-tube-type parameter and
+  every tube needs its own fit against its own curve. Fitting one and
+  assuming the other is the specific mistake this note exists to prevent,
+  and it was nearly made twice: once from three datasheets that all quote a
+  single operating point, and once from comparing two average tapers, which
+  is a first-moment statistic and is blind to the curvature the exponent
+  measures.
 - **FET.** The 1176's gain element, currently inside that engine.
 
 Two entries have left this list, and the difference between how they left
