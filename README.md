@@ -109,6 +109,26 @@ these is built yet, and each waits for a second real user:
   average slope is a first-moment statistic and is blind to the curvature an
   exponent measures.
 - **FET.** The 1176's gain element, currently inside that engine.
+- **Log-domain RMS detector.** The true-RMS technique, and only the
+  technique. The dbx 160 dossier refused to extract it with one user and
+  named the condition for revisiting: a second true-RMS unit. The API 2500
+  is that unit, and it is better documented in one respect, since the dbx
+  contains a potted module with no published datasheet while the API is
+  reported to hold the part whose datasheet the dbx dossier already borrows.
+  So the condition is closer to met than it was.
+
+  **It still waits, and for a reason worth stating**, because it is not the
+  one that stopped the diode bridge. The API 2500 is not being built. There
+  is exactly one implementation of this detector in the plug-in, and an
+  abstraction pulled out of a single implementation is usually the wrong
+  shape for the second, which is this repository's founding argument.
+  Extract it when a second true-RMS unit is **built**, not when a second
+  one is known to exist.
+
+  The boundary is already drawn by a refusal, which is the strongest kind.
+  The dbx has no attack or release controls because its detector *is* its
+  ballistics; the API has fourteen because its panel ballistics are a second
+  stage after the detector. The component must hold neither.
 
 Two entries have left this list, and the difference between how they left
 it is the most useful thing on this page.
