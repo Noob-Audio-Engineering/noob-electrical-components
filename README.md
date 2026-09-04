@@ -19,6 +19,7 @@ noob-electrical-components = { git = "https://github.com/Noob-Audio-Engineering/
 |---|---|---|
 | `noob-electrical-components-photocell` | `photocell` | The photoconductive element: its resistance and distortion laws, plus the T4-family cell built around it, with carrier traps and the programme dependence they cause. |
 | `noob-electrical-components-diode-bridge` | `diode-bridge` | The balanced diode bridge used as a gain element: four matched diodes whose floating common nodes make its law a hyperbolic tangent. |
+| `noob-electrical-components-blackmer-cell` | `blackmer-cell` | David Blackmer's log-antilog gain cell: the constant-decibels-per-volt control law behind the dbx 202 and the THAT 2180, with its tolerances, temperature coefficient and even-order symmetry residual. |
 
 ## What belongs here, and what does not
 
@@ -65,17 +66,30 @@ these is built yet, and each waits for a second real user:
   the compressor lab's 6176, and both would be wanted by any variable-mu
   unit, which is the next family to model.
 - **FET.** The 1176's gain element, currently inside that engine.
-- **VCA.** The Distressor's, likewise, and shared with every mainstream
-  VCA compressor.
 - **Variable-mu element.** The gain element of a whole family the plug-ins
   do not cover yet, so it will arrive with the first unit that needs one.
 
-The diode bridge was on this list and has since been built, arriving with
-the Neve 33609 as this note predicted. It is the one case so far admitted on
-the second half of the rule, *about to* be shared rather than already
-shared: it has one user today, and a second, the EMI TG12413, is next but
-one in the plug-in's build order. That is a weaker justification than the
-photocell's and is recorded as such.
+Two entries have left this list, and the difference between how they left
+it is the most useful thing on this page.
+
+**The diode bridge** was admitted on the second half of the rule, *about to*
+be shared rather than already shared, on the expectation that the EMI TG12413
+would be its second user. **That expectation was wrong.** The TG12413's four
+diodes are two series branches sharing a rail rather than a ring, and as drawn
+they run in reverse breakdown, so it is not a bridge and this crate does not
+serve it. The bridge still has exactly one user, the Neve 33609, and it is
+now the standing example of why the weaker half of the rule is weaker: a
+predicted second user is not a second user.
+
+**The Blackmer cell** was on this list as "VCA", which was the wrong name for
+it, and it has been built under the right one. It qualified on the strong half
+of the rule and then some, with two documented users on two manufacturers' own
+drawings: `VCA (200)` on dbx's schematic for the 160, and `DBX 202C` on SSL's
+card 82E26 for the bus compressor. Renaming it mattered as much as building
+it. "VCA" is a functional category covering the log-antilog cell, the
+operational transconductance amplifier and a field-effect transistor used as a
+variable resistor, which share a word rather than an equation; a crate called
+`Vca` would have been the fourth tube stage.
 
 ## Standards
 

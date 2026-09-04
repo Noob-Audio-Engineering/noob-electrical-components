@@ -6,9 +6,14 @@ version = 4
 name = "noob-electrical-components"
 version = "0.1.0"
 dependencies = [
+ "noob-electrical-components-blackmer-cell",
  "noob-electrical-components-diode-bridge",
  "noob-electrical-components-photocell",
 ]
+
+[[package]]
+name = "noob-electrical-components-blackmer-cell"
+version = "0.1.0"
 
 [[package]]
 name = "noob-electrical-components-diode-bridge"

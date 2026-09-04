@@ -1,0 +1,14 @@
+[package]
+name = "noob-electrical-components-blackmer-cell"
+description = "A physical model of David Blackmer's log-antilog gain cell: the constant-decibels-per-volt control law behind the dbx 202 and the THAT 2180, with its published tolerances, its temperature coefficient and its even-order symmetry residual"
+readme = "README.md"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+# Nothing here goes to crates.io until I say so.
+publish = false
+
+[dependencies]

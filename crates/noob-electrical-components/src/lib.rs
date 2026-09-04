@@ -38,3 +38,7 @@ pub use noob_electrical_components_photocell as photocell;
 #[cfg(feature = "diode-bridge")]
 #[cfg_attr(docsrs, doc(cfg(feature = "diode-bridge")))]
 pub use noob_electrical_components_diode_bridge as diode_bridge;
+
+#[cfg(feature = "blackmer-cell")]
+#[cfg_attr(docsrs, doc(cfg(feature = "blackmer-cell")))]
+pub use noob_electrical_components_blackmer_cell as blackmer_cell;

@@ -21,6 +21,12 @@ photocell = ["dep:noob-electrical-components-photocell"]
 # than a Lambert W.
 diode-bridge = ["dep:noob-electrical-components-diode-bridge"]
 
+# David Blackmer's log-antilog gain cell: the constant-decibels-per-volt
+# control law behind the dbx 202 and the THAT 2180, with its published
+# tolerances, temperature coefficient and even-order symmetry residual.
+blackmer-cell = ["dep:noob-electrical-components-blackmer-cell"]
+
 [dependencies]
 noob-electrical-components-photocell = { workspace = true, optional = true }
 noob-electrical-components-diode-bridge = { workspace = true, optional = true }
+noob-electrical-components-blackmer-cell = { workspace = true, optional = true }

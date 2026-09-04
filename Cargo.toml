@@ -4,6 +4,7 @@ members = [
     "crates/noob-electrical-components",
     "crates/noob-electrical-components-photocell",
     "crates/noob-electrical-components-diode-bridge",
+    "crates/noob-electrical-components-blackmer-cell",
 ]
 
 [workspace.package]
@@ -20,6 +21,7 @@ homepage = "https://github.com/Noob-Audio-Engineering/noob-electrical-components
 [workspace.dependencies]
 noob-electrical-components-photocell = { path = "crates/noob-electrical-components-photocell", version = "0.1.0" }
 noob-electrical-components-diode-bridge = { path = "crates/noob-electrical-components-diode-bridge", version = "0.1.0" }
+noob-electrical-components-blackmer-cell = { path = "crates/noob-electrical-components-blackmer-cell", version = "0.1.0" }
 
 [profile.release]
 lto = "thin"
