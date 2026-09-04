@@ -215,7 +215,7 @@ fn traps_make_a_worked_cell_slower_to_recover() {
 
 /// The model stays responsive above its documented operating limit.
 ///
-/// Generation reaches the clamp at about 4.2 V of drive, above which the
+/// Generation reaches the clamp at about 3.2 V of drive, above which the
 /// two headline laws stop contributing. This asserts the model still
 /// behaves like a compressor up there rather than dying: it must reach
 /// full conductance, hold it, and release from it. Anything about the
@@ -223,7 +223,7 @@ fn traps_make_a_worked_cell_slower_to_recover() {
 /// claim to be faithful there; see the note on [`Cell::step`].
 #[test]
 fn the_model_is_still_responsive_above_its_operating_limit() {
-    for drive in [5.0f32, 10.0, 50.0] {
+    for drive in [3.5f32, 5.0, 10.0, 50.0] {
         let mut c = Cell::new(cell_params_for(T4Variant::Gray), SR);
         for _ in 0..(SR as usize) {
             c.step(drive);

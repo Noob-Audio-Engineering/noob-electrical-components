@@ -84,7 +84,60 @@ pub const R_MIN: f32 = 500.0;
 pub const EL_B: f32 = 5.0;
 
 /// Photocell gamma (conductance ∝ light^γ).
-pub const CELL_GAMMA: f32 = 0.8;
+///
+/// # Where this number comes from
+///
+/// 0.7 is what the LA-2A dossier's design table recommends, and the dossier
+/// anchors it to a published range rather than to a measurement: common
+/// cadmium-sulphide cells are quoted at gamma 0.6 to 0.9, from a PerkinElmer
+/// photocell application note and a GL5528 datasheet. No independent
+/// measurement of a T4's own exponent exists in public. So this is a pick
+/// inside a cited range, not a figure anybody measured on the part being
+/// modelled, and it should be read as the weaker of those two things.
+///
+/// It was 0.8 before, and that value had no justification recorded anywhere:
+/// searching the LA-2A dossier for it alongside gamma returns nothing. The
+/// LA-3A and CL-1B dossiers describe the exponent as "shared" or as "the same
+/// cell", which cites this implementation rather than a source, so the
+/// research and the code had come to agree only by copying each other. Both
+/// values are picks from the same range; one is written down with its sources
+/// and the other was not, so the sourced one won.
+///
+/// # A later dossier should cite the sources, not this constant
+///
+/// That circle is how 0.8 came to look better founded than it was. Anything
+/// quoting a gamma for these cells should quote the application note and the
+/// datasheet above, and say it is a range.
+///
+/// # What would justify moving it
+///
+/// A measurement of a T4's exponent, or a dossier figure derived from one.
+/// Not a test result. Every optical test and every benchmark row keeps its
+/// verdict at 0.7 and at 0.8 alike, because each compressor calibrates its
+/// input gain against a gain-reduction figure, and the exponent cancels out
+/// of that: it scales the whole drive axis by γ² and leaves every ratio on
+/// it alone. See [`Cell::step`].
+///
+/// # What the exponent does move
+///
+/// Two things, and the second is the one to watch.
+///
+/// The knee between the endpoints, by up to 4.6 dB of gain reduction at
+/// equal light. Calibration removes almost all of this, since it pins one
+/// point on the curve and the ends are fixed by [`R_DARK`] and [`R_MIN`]:
+/// across the LA-2A's published rows it survives as about 0.01 dB.
+///
+/// **Timing, which calibration does not absorb.** Attack runs on
+/// `tau_f0 / (1 + light / l_a)`, so it is set by *light*, while calibration
+/// pins *carriers*. Those are the two sides of the exponent, so a change in
+/// γ moves one and not the other: at the LA-2A's 1 dB onset the light is
+/// 5.76e-6 at 0.7 against 2.60e-5 at 0.8, four and a half times less, and
+/// the attack slows by 1.7 % because less light means less of the
+/// light-dependent speed-up. It stays well inside the published 5 to 60 ms
+/// either way. Anyone changing this constant should expect the timing rows
+/// to move even though the level rows do not, and should not read that as a
+/// calibration fault.
+pub const CELL_GAMMA: f32 = 0.7;
 /// Photocell conductance for full light, so `n_f = 1` gives `R_MIN`.
 pub const K_G: f32 = 1.0 / R_MIN - 1.0 / R_DARK;
 
@@ -439,15 +492,33 @@ impl Cell {
     ///
     /// # Usable drive range
     ///
-    /// The model is faithful up to roughly **4.2 V** of smoothed drive and
+    /// The model is faithful up to roughly **3.2 V** of smoothed drive and
     /// saturates hard above it. [`carriers_for`](Self::carriers_for)
-    /// returns `k_gen · light^γ`, which reaches 1.0 at a light of 0.0878,
+    /// returns `k_gen · light^γ`, which reaches 1.0 at a light of 0.0620,
     /// and the free-carrier state is clamped to 0..1. So past that point
     /// generation is pinned at the clamp, and neither the panel's law nor
     /// the photoconductor's contributes anything further: 5 V and 50 V of
     /// drive give bit-identical output. The attack also changes character
-    /// across that line, from about 39 ms at 1 V to 8.3 ms at 6 V, so the
-    /// roughly 10 ms the specifications quote is only produced above it.
+    /// across that line, from about 40 ms at 1 V to 6.6 ms at 6 V, so the
+    /// roughly 10 ms the specifications quote is only produced above it,
+    /// at about 4.6 V.
+    ///
+    /// # The volts move with the exponent; the headroom does not
+    ///
+    /// This figure was 4.2 V while [`CELL_GAMMA`] was 0.8, and a reader
+    /// comparing the two numbers would reasonably conclude that the change
+    /// cost a volt of headroom. It did not. Inverting the two laws gives
+    /// `u = (EL_B · γ / ln(k_gen / n))²`, so **every** drive voltage scales
+    /// as γ², the whole axis by `(0.7/0.8)² = 0.766`, and the ratio between
+    /// any two of them is free of γ altogether. A compressor that calibrates
+    /// its input gain against a gain-reduction figure, as all three here do,
+    /// rescales with it: the LA-2A's 1 dB onset sits at 0.172 V rather than
+    /// 0.224 V, and the clamp stays 18.84 times above the onset at either
+    /// exponent, to the last digit that means anything.
+    ///
+    /// So the limit is stated in volts because that is what `step` takes,
+    /// but it is only meaningful against a calibrated onset. What did change
+    /// is timing, and it changed for a different reason: see [`CELL_GAMMA`].
     ///
     /// This is a real limit of the model rather than of the part, and a
     /// caller should keep its sidechain inside it. It is recorded rather
