@@ -6,8 +6,11 @@
 //! the other joined at a second floating node. A DC control current enters
 //! one common node and leaves the other, forward-biasing all four and
 //! setting how much signal current the bridge will pass. Neve used exactly
-//! this as the attenuator of the 2254 and the 33609, and it also turns up
-//! in the Siemens U273 and the EMI TG12413.
+//! this as the attenuator of the 2254 and the 33609.
+//!
+//! It was written expecting the EMI TG12413 to be its second user. **It is
+//! not**, and the section below says why, because the reason is more useful
+//! than the expectation was.
 //!
 //! # Why it is a tanh and not a Lambert W
 //!
@@ -49,11 +52,58 @@
 //! shunt resistors that turn it into an attenuator, the sidechain that
 //! produces the control current, the shaping network between them and the
 //! transformers on either side all belong to the machine, because they
-//! differ between the 2254, the 33609 and the TG12413 while the bridge
-//! itself does not.
+//! differ between the 2254 and the 33609 while the bridge itself does not.
 //!
 //! Solving the node equation of a particular divider is therefore the
 //! caller's job. [`current`] and [`slope`] are what that solve needs.
+//!
+//! # What this models, and what it does not
+//!
+//! **What it models:** four diodes in a **closed ring**, **one junction per
+//! arm**, both common nodes **floating**, **forward-biased** by an injected
+//! control current. That is Neve's element in the 2254 and the 33609, and
+//! within it the derivation is exact for ideal matched diodes.
+//!
+//! **What it does not model:** any other arrangement of four diodes. The
+//! name "diode bridge" is a family name and a bridge is a ring of four, so
+//! the name was never the thing that was wrong; the wrong thing was the
+//! assumption that any diode gain element would fit it.
+//!
+//! The EMI TG12413 is the case that showed it. Its four HS2051s are **two
+//! branches of two diodes in series**, both the same way up, whose common
+//! node is the +20 V supply rail rather than a floating one, and as drawn
+//! they are in **reverse breakdown** rather than forward conduction. Six of
+//! the thirteen rows in a side-by-side comparison of the two elements are
+//! structural rather than differences of value, and the operating region is
+//! the largest of them: breakdown is tunnelling below about 5 V and
+//! avalanche above about 6 V, neither is the diode exponential, and neither
+//! yields a hyperbolic tangent when two arms are put in opposition.
+//!
+//! **The shortest way to see it, on the reading most generous to this
+//! crate.** Suppose the TG's diodes are forward-biased after all. Then the
+//! law *is* a tanh, because two junctions in series per arm still subtract
+//! to a logarithm of a current ratio — but with **twice the constant**:
+//!
+//! ```text
+//! Neve, one junction per arm:   i = I · tanh( u / (2·η·V_T) )
+//! TG,   two junctions per arm:  i = I · tanh( u / (4·η·V_T) )
+//! ```
+//!
+//! For `tanh(a·sinθ)` the third-harmonic ratio is `a²/12`, and doubling the
+//! thermal scale halves `a`. So **two junctions per arm doubles the constant
+//! and gives four times less third harmonic at equal drive**. A crate with
+//! `2·η·V_T` baked into it, as this one has, is wrong for that element by a
+//! factor of two in the argument and four in the third harmonic — and that
+//! is the *best* case, because on the reading the drawing actually supports
+//! there is no tanh to be wrong about.
+//!
+//! **So the TG12413's element is built inside its own plug-in, not here.**
+//! A law that carried junctions-per-arm and a bulk resistance would contain
+//! both, and the note in that plug-in's `element` module derives it. It has
+//! not been lifted into this crate, because a component earns its place once
+//! something real shares it and this ring still has exactly one certain
+//! user. Widening a part to fit a case nobody has settled stops it
+//! describing anything.
 //!
 //! # What is estimated
 //!
