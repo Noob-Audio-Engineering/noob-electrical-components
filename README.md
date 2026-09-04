@@ -75,22 +75,32 @@ these is built yet, and each waits for a second real user:
   **And when it is built, both tubes must be fitted by one documented
   procedure.** Two researchers tried to settle whether the candidate tubes
   share a shape, fitting transconductance to `exp(-(w/V0)^n)`, and the
-  useful result is that published data cannot answer it. One datasheet
-  gives only two transconductance points, which cannot fix three
-  parameters: assume the unpublished zero-bias value and the exponent runs
-  anywhere from 0.96 to 2.36. Worse, the *other* tube's exponent moves from
-  2.16 to 1.71 depending on whether it is anchored on interior or endpoint
-  values of its own single curve. An exponent read off a datasheet is
-  therefore not a stable quantity, and two exponents read off two datasheets
-  by two methods are not comparable at all.
+  useful result is that published data cannot answer it, and it is now
+  measured rather than inferred. One tube's maker plots it under four
+  operating conditions, and fitting all four gives exponents of 1.00, 0.84,
+  0.71 and 0.59, moving monotonically with the supply, every fit good to
+  under half a decibel. One tube, four conditions, a factor of 1.7. The
+  other tube's exponent moves from 2.16 to 1.71 depending on whether it is
+  anchored on interior or endpoint values of its own single curve. So the
+  exponent is condition-dependent and anchor-dependent, and two exponents
+  read off two datasheets by two methods are not comparable at all.
 
   So the constraint is procedural rather than numerical. If this component
   is built, every tube's parameters come from **one** fitting procedure
   using the same class of anchor points, written down. Two people each
   fitting their own tube their own way and comparing the results afterwards
-  would be agreeing on an artefact. Whether the tubes truly share a shape is
-  still open, and a claimed measurement of one of them is in dispute over
-  which curve was traced.
+  would be agreeing on an artefact. And the fits must come from the
+  **topology the part is used in**: the four-condition plot above is a
+  cascode connection, where the section's plate floats at the next tube's
+  cathode rather than sitting at its working voltage, so it is not the law
+  of the grounded-cathode stage either compressor actually runs.
+
+  Whether the tubes truly share a shape is still open. All that the
+  documents support is that the first tube's transconductance is at or below
+  a pure exponential in every condition its maker plots, and that forcing
+  the second tube's 2.16 onto it costs seven to twelve times the free fit's
+  residual. That is weaker than saying the two differ, and much weaker than
+  saying they match.
 
   Two near-misses on the way there are worth keeping, because both looked
   like evidence. Three datasheets agreeing on an amplification factor say
