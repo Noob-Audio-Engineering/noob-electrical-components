@@ -95,12 +95,23 @@ these is built yet, and each waits for a second real user:
   cathode rather than sitting at its working voltage, so it is not the law
   of the grounded-cathode stage either compressor actually runs.
 
-  Whether the tubes truly share a shape is still open. All that the
-  documents support is that the first tube's transconductance is at or below
-  a pure exponential in every condition its maker plots, and that forcing
-  the second tube's 2.16 onto it costs seven to twelve times the free fit's
-  residual. That is weaker than saying the two differ, and much weaker than
-  saying they match.
+  **Where it finally landed: the tubes do differ, by roughly a factor of two
+  in the exponent, and the two halves of that claim are not equally solid.**
+  The first tube's figure is measured, at 1.00 to 1.10 by two readers
+  working independently, on a logarithmic plot spanning three decades where
+  an exponential is a straight line. The second tube's is only bracketed, at
+  1.6 to 2.2, because both its manufacturers plotted it on linear axes that
+  cannot resolve the region below a fiftieth of full scale, and where they
+  can be read at all they disagree by up to sixty per cent. A figure of 2.16
+  circulated for a while and should not be quoted; it came from one maker's
+  curve and the other maker's gives 1.58.
+
+  **And this is now the sharpest argument for not building the part yet.**
+  The parameter set a shared component would ship with today has been shown
+  by its own author to be wrong in the deep end, six-fold off a published
+  plate-resistance curve by ten volts of bias, which is where a limiter
+  spends its loudest moments. Building now would cast that into a crate and
+  give it to every future user.
 
   Two near-misses on the way there are worth keeping, because both looked
   like evidence. Three datasheets agreeing on an amplification factor say
