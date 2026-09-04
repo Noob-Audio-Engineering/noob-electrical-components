@@ -13,6 +13,7 @@ noob-electrical-components = { git = "https://github.com/Noob-Audio-Engineering/
 |---|---|---|
 | `photocell` | `noob_electrical_components::photocell` | The T4-family light-dependent resistor. |
 | `diode-bridge` | `noob_electrical_components::diode_bridge` | The balanced diode bridge used as a gain element. |
+| `blackmer-cell` | `noob_electrical_components::blackmer_cell` | David Blackmer's log-antilog gain cell, and its control law. |
 
 See the workspace README for what belongs in this repository and what does
 not.
